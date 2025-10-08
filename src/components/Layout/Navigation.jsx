@@ -3,6 +3,7 @@ import UserIcon from "../../icons/UserIcon";
 import CartIcon from "../../icons/CartIcon";
 import HeartIcon from "../../icons/HeartIcon";
 import SearchIcon from "../../icons/SearchIcon";
+
 const Navigation = () => {
   const location = useLocation();
 
@@ -12,8 +13,13 @@ const Navigation = () => {
         <div className="w-full px-10 flex justify-between items-center h-20 lg:px-5">
           <Link
             to="/home"
-            className="text-3xl font-bold text-gray-800 no-underline transition-all duration-300 hover:scale-105"
+            className="flex items-center gap-3 text-4xl font-bold text-gray-800 no-underline transition-all duration-300 hover:scale-105"
           >
+            <img 
+              src="/mapple-logo.png" 
+              alt="Mapple Logo" 
+              className="w-12 h-12 object-contain"
+            />
             Mapple
           </Link>
 
@@ -68,19 +74,19 @@ const Navigation = () => {
           <div className="flex gap-6 items-center lg:gap-5">
             <Link
               to="/wishlist"
-              className="text-2xl no-underline transition-all duration-300 p-2 rounded-full hover:bg-gray-50 hover:scale-110"
+              className="text-2xl no-underline transition-all duration-300 p-2 rounded-full hover:bg-gray-50"
             >
               <HeartIcon />
             </Link>
             <Link
               to="/cart"
-              className="text-2xl no-underline transition-all duration-300 p-2 rounded-full hover:bg-gray-50 hover:scale-110"
+              className="text-2xl no-underline transition-all duration-300 p-2 rounded-full hover:bg-gray-50 "
             >
               <CartIcon />
             </Link>
             <Link
               to="/profile"
-              className="text-2xl no-underline transition-all duration-300 p-2 rounded-full hover:bg-gray-50 hover:scale-110"
+              className="text-2xl no-underline transition-all duration-300 p-2 rounded-full hover:bg-gray-50 "
             >
               <UserIcon />
             </Link>
