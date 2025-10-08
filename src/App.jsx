@@ -1,4 +1,3 @@
-import "./App.css";
 import Navigation from "./views/Navigation";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./views/Home";
@@ -8,7 +7,7 @@ import Contact from "./views/Contact";
 
 function App() {
   return (
-    <>
+    <div id="root" className="w-full m-0 p-0 min-h-screen">
       <Navigation />
       <Routes>
         <Route path="/" element={<Navigate to="/home" replace />} />
@@ -17,7 +16,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/contact" element={<Contact />} />
       </Routes>
-    </>
+    </div>
   );
 }
 
