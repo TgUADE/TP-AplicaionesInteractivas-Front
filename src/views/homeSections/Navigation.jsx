@@ -1,5 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
-
+import UserIcon from "../../icons/UserIcon";
+import CartIcon from "../../icons/CartIcon";
+import HeartIcon from "../../icons/HeartIcon";
+import SearchIcon from "../../icons/SearchIcon";
 const Navigation = () => {
   const location = useLocation();
 
@@ -11,13 +14,13 @@ const Navigation = () => {
             to="/home"
             className="text-3xl font-bold text-gray-800 no-underline transition-all duration-300 hover:scale-105"
           >
-            🍎 Mapple
+            Mapple
           </Link>
 
           <div className="flex-1 max-w-md mx-10 lg:max-w-xs lg:mx-5">
             <div className="relative w-full">
               <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-lg text-gray-600">
-                🔍
+                <SearchIcon />
               </span>
               <input
                 type="text"
@@ -67,19 +70,19 @@ const Navigation = () => {
               to="/wishlist"
               className="text-2xl no-underline transition-all duration-300 p-2 rounded-full hover:bg-gray-50 hover:scale-110"
             >
-              ❤️
+              <HeartIcon />
             </Link>
             <Link
               to="/cart"
               className="text-2xl no-underline transition-all duration-300 p-2 rounded-full hover:bg-gray-50 hover:scale-110"
             >
-              🛒
+              <CartIcon />
             </Link>
             <Link
               to="/profile"
               className="text-2xl no-underline transition-all duration-300 p-2 rounded-full hover:bg-gray-50 hover:scale-110"
             >
-              👤
+              <UserIcon />
             </Link>
           </div>
         </div>

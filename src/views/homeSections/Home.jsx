@@ -146,42 +146,29 @@ const Home = () => {
           </div>
           <nav className="border-b border-gray-300 mb-5">
             <div className="flex justify-center gap-10 py-5 lg:gap-6 md:flex-wrap md:gap-4">
-              <Link
-                to="/iphone"
-                className="text-gray-800 no-underline font-medium text-base transition-colors duration-300 hover:text-primary-500"
-              >
-                Iphone
-              </Link>
-              <Link
-                to="/ipad"
-                className="text-gray-800 no-underline font-medium text-base transition-colors duration-300 hover:text-primary-500"
-              >
-                Ipad
-              </Link>
-              <Link
-                to="/mac"
-                className="text-gray-800 no-underline font-medium text-base transition-colors duration-300 hover:text-primary-500"
-              >
-                Mac
-              </Link>
-              <Link
-                to="/airpods"
-                className="text-gray-800 no-underline font-medium text-base transition-colors duration-300 hover:text-primary-500"
-              >
-                Airpods
-              </Link>
-              <Link
-                to="/vision"
-                className="text-gray-800 no-underline font-medium text-base transition-colors duration-300 hover:text-primary-500"
-              >
-                Vision
-              </Link>
-              <Link
-                to="/watch"
-                className="text-gray-800 no-underline font-medium text-base transition-colors duration-300 hover:text-primary-500"
-              >
-                Watch
-              </Link>
+              {/* Categories from API */}
+              {isLoading ? (
+                <p>Loading categories...</p>
+              ) : (
+                <>
+                  
+                  {categories.map((category) => (
+                    <Link
+                      key={category.id}
+                      to={`/products?category=${encodeURIComponent(category.description)}`}
+                      className={`${
+                        selectedCategory === category.description
+                          ? "text-gray-800 border-b-2 border-gray-800 font-semibold"
+                          : "text-gray-600 border-b-2 border-transparent font-medium hover:text-gray-800 hover:border-gray-800"
+                      } text-base pb-1 transition-all duration-300 no-underline`}
+                    >
+                      {category.description ? 
+                        category.description.charAt(0).toUpperCase() + category.description.slice(1) 
+                        : 'Category'}
+                    </Link>
+                  ))}
+                </>
+              )}
             </div>
           </nav>
           <div className="flex gap-8 lg:gap-5">
@@ -244,7 +231,7 @@ const Home = () => {
       <footer className="bg-black text-white py-15 px-10 w-full lg:py-10 lg:px-5 md:py-8 md:px-4">
         <div className="max-w-6xl mx-auto flex justify-between items-start lg:flex-col lg:gap-8">
           <div className="flex items-center gap-2">
-            <span className="text-3xl">🍎</span>
+            <span className="text-3xl"></span>
             <span className="text-3xl font-bold text-white">Mapple</span>
           </div>
 
