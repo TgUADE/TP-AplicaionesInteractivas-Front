@@ -13,7 +13,7 @@ const Navigation = () => {
         <div className="w-full px-10 flex justify-between items-center h-20 lg:px-5">
           <Link
             to="/home"
-            className="flex items-center gap-3 text-4xl font-bold text-gray-800 no-underline transition-all duration-300 hover:scale-105"
+            className="flex items-center gap-3 text-4xl font-bold text-gray-800 no-underline transition-all duration-300"
           >
             <img 
               src="/mapple-logo.png" 

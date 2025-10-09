@@ -6,8 +6,17 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/api": {
-        target: "http://localhost:8081",
+      "/api/v1/auth": {
+        target: "http://127.0.0.1:8081",
+        changeOrigin: true,
+      },
+      "/api/products": {
+        target: "http://127.0.0.1:8081",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ""),
+      },
+      "/api/categories": {
+        target: "http://127.0.0.1:8081", 
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },

@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import ProductGrid from "../components/Product/ProductGrid";
 import CategoryNav from "../components/Category/CategoryNav";
 
-const URLproducts = "api/products";
-const URLcategories = "api/categories";
+const URLproducts = "/api/products";
+const URLcategories = "/api/categories";
 const options = {
   method: "GET",
   headers: {
