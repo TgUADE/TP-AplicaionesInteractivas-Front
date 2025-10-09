@@ -1,115 +1,19 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import ProductGrid from "../components/Product/ProductGrid";
 import CategoryNav from "../components/Category/CategoryNav";
-
-const URLproducts = "/api/products";
-const URLcategories = "/api/categories";
-const options = {
-  method: "GET",
-  headers: {
-    "Content-Type": "application/json",
-  },
-};
+import { useProducts } from "../hook/useProducts";
 
 const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { products, categories, isLoading, filterProductsByCategory } =
+    useProducts();
 
-  // Fetch products
-  useEffect(() => {
-    let isMounted = true;
-
-    fetch(URLproducts, options)
-      .then((response) => response.json())
-      .then((data) => {
-        if (isMounted) {
-          setProducts(data);
-          console.log("Products loaded:", data);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching products:", error);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // Fetch categories
-  useEffect(() => {
-    let isMounted = true;
-
-    fetch(URLcategories, options)
-      .then((response) => response.json())
-      .then((data) => {
-        if (isMounted) {
-          setCategories(data);
-          console.log("Categories loaded:", data);
-          setIsLoading(false);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching categories:", error);
-        setIsLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const featuredProducts = [
-    {
-      id: 1,
-      name: "Apple iPhone 14 Pro Max 128GB Deep Purple",
-      category: "iphone",
-      price: "$900",
-      image:
-        "https://via.placeholder.com/300x300/663399/FFFFFF?text=iPhone+14+Pro+Max",
-    },
-    {
-      id: 2,
-      name: "Apple Watch Series 9 GPS 41mm Starlight Aluminium",
-      category: "watch",
-      price: "$399",
-      image:
-        "https://via.placeholder.com/300x300/34C759/FFFFFF?text=Apple+Watch+Series+9",
-    },
-    {
-      id: 3,
-      name: "AirPods Max Silver Starlight Aluminium",
-      category: "airpods",
-      price: "$549",
-      image:
-        "https://via.placeholder.com/300x300/FF9500/FFFFFF?text=AirPods+Max",
-    },
-    {
-      id: 4,
-      name: "Vision Pro",
-      category: "vision",
-      price: "$2899",
-      image:
-        "https://via.placeholder.com/300x300/000000/FFFFFF?text=Vision+Pro",
-    },
-    {
-      id: 5,
-      name: 'Apple iPad 9 10.2" 64GB Wi-Fi Silver (MK2L3) 2021',
-      category: "ipad",
-      price: "$398",
-      image: "https://via.placeholder.com/300x300/FF3B30/FFFFFF?text=iPad+9",
-    },
-  ];
-
-  const filteredProducts =
-    selectedCategory === "all"
-      ? featuredProducts
-      : featuredProducts.filter(
-          (product) => product.category === selectedCategory
-        );
+  const filteredProducts = filterProductsByCategory(
+    products,
+    categories,
+    selectedCategory
+  );
 
   return (
     <div className="min-h-screen bg-white w-full">
@@ -178,7 +82,7 @@ const Home = () => {
         <ProductGrid
           products={filteredProducts}
           isLoading={isLoading}
-          onAddToCart={(product) => console.log('Add to cart:', product)}
+          onAddToCart={(product) => console.log("Add to cart:", product)}
           columns={3}
         />
       </section>
