@@ -15,9 +15,9 @@ const Navigation = () => {
             to="/home"
             className="flex items-center gap-3 text-4xl font-bold text-gray-800 no-underline transition-all duration-300"
           >
-            <img 
-              src="/mapple-logo.png" 
-              alt="Mapple Logo" 
+            <img
+              src="/mapple-logo.png"
+              alt="Mapple Logo"
               className="w-12 h-12 object-contain"
             />
             Mapple
@@ -52,7 +52,11 @@ const Navigation = () => {
             <li className="flex items-center">
               <Link
                 to="/products"
-                className="text-gray-800 no-underline font-medium text-base transition-all duration-300 py-2 hover:text-primary-500"
+                className={`text-gray-800 no-underline font-medium text-base transition-all duration-300 py-2 relative ${
+                  location.pathname === "/products"
+                    ? "text-primary-500 font-semibold"
+                    : "hover:text-primary-500"
+                }`}
               >
                 Products
               </Link>

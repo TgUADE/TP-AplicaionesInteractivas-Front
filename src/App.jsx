@@ -5,6 +5,7 @@ import Home from "./views/Home.jsx";
 import Products from "./views/Products";
 import Contact from "./views/Contact";
 import Auth from "./views/Auth";
+import Profile from "./views/Profile";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/products" element={<Products />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
       <Footer />
     </>
