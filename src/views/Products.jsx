@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import ProductGrid from "../components/Product/ProductGrid";
 import ProductFilters from "../components/Product/ProductFilters";
+import { useCart } from "../hook/useCart";
+
 const URLproducts = "api/products";
 const URLcategories = "api/categories";
 const options = {
@@ -21,10 +23,18 @@ const Products = () => {
   const [sortBy, setSortBy] = useState("name");
   const [productsLoaded, setProductsLoaded] = useState(false);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  const { addToCart } = useCart();
+
+  const handleAddToCart = async (product) => {
+    const success = await addToCart(product.id, 1);
+    if (success) {
+      console.log(`Producto ${product.name} agregado al carrito`);
+    }
+  };
 
   // Set initial category from URL parameter
   useEffect(() => {
-    const categoryFromUrl = searchParams.get('category');
+    const categoryFromUrl = searchParams.get("category");
     if (categoryFromUrl) {
       setSelectedCategory(decodeURIComponent(categoryFromUrl));
     }
@@ -89,26 +99,42 @@ const Products = () => {
     let matchesCategory = selectedCategory === "all";
     if (!matchesCategory) {
       // Find the selected category object to get its ID
-      const selectedCategoryObj = categories.find(cat => cat.description === selectedCategory);
-      console.log('Selected category:', selectedCategory);
-      console.log('Found category object:', selectedCategoryObj);
-      console.log('Product category:', product.category);
-      
+      const selectedCategoryObj = categories.find(
+        (cat) => cat.description === selectedCategory
+      );
+      console.log("Selected category:", selectedCategory);
+      console.log("Found category object:", selectedCategoryObj);
+      console.log("Product category:", product.category);
+
       if (selectedCategoryObj && product.category) {
         // Compare the category IDs
         matchesCategory = product.category.id === selectedCategoryObj.id;
-        console.log('Category match:', matchesCategory, 'Expected:', selectedCategoryObj.id, 'Actual:', product.category.id);
+        console.log(
+          "Category match:",
+          matchesCategory,
+          "Expected:",
+          selectedCategoryObj.id,
+          "Actual:",
+          product.category.id
+        );
       }
     }
-    
+
     // Search matching
-    const matchesSearch = searchTerm === "" || 
-      product.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
-    
+    const matchesSearch =
+      searchTerm === "" ||
+      product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      false;
+
     return matchesCategory && matchesSearch;
   });
 
-  console.log('Filtered products:', filteredProducts.length, 'out of', products.length);
+  console.log(
+    "Filtered products:",
+    filteredProducts.length,
+    "out of",
+    products.length
+  );
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     switch (sortBy) {
@@ -129,13 +155,17 @@ const Products = () => {
           <h1 className="text-4xl font-bold text-gray-800 mb-2">Products</h1>
           {selectedCategory !== "all" && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Link to="/home" className="hover:text-blue-500">Home</Link>
+              <Link to="/home" className="hover:text-blue-500">
+                Home
+              </Link>
               <span>›</span>
-              <span className="text-blue-600 font-medium">{selectedCategory}</span>
+              <span className="text-blue-600 font-medium">
+                {selectedCategory}
+              </span>
             </div>
           )}
         </div>
-        
+
         <ProductFilters
           searchTerm={searchTerm}
           onSearchChange={(e) => setSearchTerm(e.target.value)}
@@ -152,7 +182,7 @@ const Products = () => {
           isLoading={isLoading}
           emptyMessage="No products found"
           emptySubMessage="Try adjusting your search or filter criteria"
-          onAddToCart={(product) => console.log('Add to cart:', product)}
+          onAddToCart={handleAddToCart}
         />
       </section>
     </div>

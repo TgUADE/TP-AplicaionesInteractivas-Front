@@ -6,6 +6,7 @@ import Products from "./views/Products";
 import Contact from "./views/Contact";
 import Auth from "./views/Auth";
 import Profile from "./views/Profile";
+import Cart from "./views/Cart";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/cart" element={<Cart />} />
       </Routes>
       <Footer />
     </>

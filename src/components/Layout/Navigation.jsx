@@ -3,9 +3,11 @@ import UserIcon from "../../icons/UserIcon";
 import CartIcon from "../../icons/CartIcon";
 import HeartIcon from "../../icons/HeartIcon";
 import SearchIcon from "../../icons/SearchIcon";
+import { useCart } from "../../hook/useCart";
 
 const Navigation = () => {
   const location = useLocation();
+  const { cartItemCount, isLocalCart } = useCart();
 
   return (
     <>
@@ -84,9 +86,9 @@ const Navigation = () => {
             </Link>
             <Link
               to="/cart"
-              className="text-2xl no-underline transition-all duration-300 p-2 rounded-full hover:bg-gray-50 "
+              className="text-2xl no-underline transition-all duration-300 p-2 rounded-full hover:bg-gray-50 relative"
             >
-              <CartIcon />
+              <CartIcon itemCount={cartItemCount} isLocalCart={isLocalCart} />
             </Link>
             <Link
               to="/profile"
