@@ -1,9 +1,11 @@
 import HeartIcon from "../../icons/HeartIcon";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ProductCard = ({ product, onAddToCart }) => {
   console.log("En product card", product);
 
+  const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const getCurrentImage = () => {
@@ -31,8 +33,25 @@ const ProductCard = ({ product, onAddToCart }) => {
 
   const hasMultipleImages = product.images && product.images.length > 1;
 
+  const handleCardClick = (e) => {
+    console.log("Card clicked for product:", product.id);
+    console.log("Event target:", e.target);
+    
+    // Don't navigate if clicking on interactive elements
+    if (e.target.closest('button') || e.target.closest('.heart-icon')) {
+      console.log("Clicked on interactive element, not navigating");
+      return;
+    }
+    
+    console.log("Navigating to:", `/product/${product.id}`);
+    navigate(`/product/${product.id}`);
+  };
+
   return (
-    <div className="bg-gray-50 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 relative hover:transform ">
+    <div 
+      className="bg-gray-50 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 relative cursor-pointer"
+      onClick={handleCardClick}
+    >
       {/* Discount Badge - Top Left Corner */}
       {product.promotion && (
         <div className="absolute top-0 left-0 bg-red-500 text-white px-3 py-2 rounded-tl-2xl rounded-br-xl text-sm font-bold z-20">
@@ -43,7 +62,7 @@ const ProductCard = ({ product, onAddToCart }) => {
         </div>
       )}
       
-      <div className="absolute top-5 right-5 text-xl cursor-pointer z-10">
+      <div className="absolute top-5 right-5 text-xl cursor-pointer z-10 heart-icon">
         <HeartIcon />
       </div>
       
@@ -62,7 +81,10 @@ const ProductCard = ({ product, onAddToCart }) => {
                 <>
                   {/* Left Arrow */}
                   <button
-                    onClick={goToPreviousImage}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      goToPreviousImage();
+                    }}
                     className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10"
                     aria-label="Previous image"
                   >
@@ -83,7 +105,10 @@ const ProductCard = ({ product, onAddToCart }) => {
 
                   {/* Right Arrow */}
                   <button
-                    onClick={goToNextImage}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      goToNextImage();
+                    }}
                     className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10"
                     aria-label="Next image"
                   >
@@ -110,7 +135,10 @@ const ProductCard = ({ product, onAddToCart }) => {
                   {product.images.map((_, index) => (
                     <button
                       key={index}
-                      onClick={() => setCurrentImageIndex(index)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentImageIndex(index);
+                      }}
                       className={`w-2 h-2 rounded-full transition-all duration-300 ${
                         index === currentImageIndex
                           ? "bg-white"
@@ -128,13 +156,13 @@ const ProductCard = ({ product, onAddToCart }) => {
         </div>
         
         <div className="text-center">
-          <h3 className="text-base text-gray-800 m-0 mb-4 font-medium leading-relaxed min-h-10 flex items-center justify-center">
+          <h3 className="text-lg text-gray-800 m-0 mb-4 font-medium leading-relaxed min-h-12 flex items-center justify-center">
             {product.name || "Unnamed Product"}
           </h3>
           <div className="flex flex-col items-center gap-3">
             {/* Current Price */}
             <div className="text-center min-h-[4rem]">
-              <div className="text-2xl font-bold text-gray-800">
+              <div className="text-3xl font-bold text-gray-800">
                 ${product.current_price?.toFixed(2) || "0.00"}
               </div>
               
@@ -147,8 +175,11 @@ const ProductCard = ({ product, onAddToCart }) => {
             </div>
             
             <button
-              onClick={() => onAddToCart && onAddToCart(product)}
-              className="bg-gray-800 text-white border-none px-6 py-3 rounded-full font-semibold cursor-pointer transition-all duration-300 text-sm hover:bg-primary-500 hover:transform  hover:shadow-lg hover:shadow-primary-500/30 w-full"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToCart && onAddToCart(product);
+              }}
+              className="bg-gray-900 text-white border-none px-8 py-4 rounded-lg font-medium cursor-pointer transition-all duration-300 text-base hover:bg-gray-700 w-full"
             >
               Add to cart
             </button>

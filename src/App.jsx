@@ -3,6 +3,7 @@ import Footer from "./components/Layout/Footer";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./views/Home.jsx";
 import Products from "./views/Products";
+import ProductDetail from "./views/ProductDetail";
 import Contact from "./views/Contact";
 import Auth from "./views/Auth";
 import Profile from "./views/Profile";
@@ -16,6 +17,7 @@ function App() {
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/home" element={<Home />} />
         <Route path="/products" element={<Products />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/profile" element={<Profile />} />

@@ -84,44 +84,40 @@ const Home = () => {
       {/* Featured Products Banners Section */}
       <section className="bg-white w-full h-[637px] flex flex-row items-start p-0 gap-0">
         {/* Left Banners */}
-        <div className="flex flex-col items-start p-0 gap-0 w-[720px] h-[637px] flex-none order-0">
+        <div className="flex flex-col items-start p-0 gap-0 w-1/2 h-[637px] flex-none order-0">
           {/* Wide Square - AirPods Pro */}
-          <div
-            className="flex flex-row items-center bg-white w-[720px] h-[328px] flex-none order-0 relative"
-            style={{ padding: "0px 48px 0px 334px" }}
-          >
+          <div className="flex flex-row items-center justify-between bg-white w-full h-[328px] flex-none order-0 relative px-8">
             {/* AirPods Image */}
-            <div
-              className="absolute h-[285px] left-[3px] right-[447px] top-0 flex-none order-0 flex-grow-0 z-0"
-              style={{
-                backgroundImage:
-                  "url(/13d77c80-200b-4f73-93c9-4b78165a1806.webp)",
-                backgroundSize: "contain",
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "center",
-                filter: "drop-shadow(0px 20px 3px rgba(0, 0, 0, 0.13))",
-                transform: "rotate(10deg)",
-              }}
-            />
+            <div className="flex-1 flex justify-center items-center h-full">
+              <div
+                className="h-[285px] w-[270px] flex-none z-0"
+                style={{
+                  backgroundImage:
+                    "url(/13d77c80-200b-4f73-93c9-4b78165a1806.webp)",
+                  backgroundSize: "contain",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "center",
+                  filter: "drop-shadow(0px 20px 3px rgba(0, 0, 0, 0.13))",
+                  transform: "rotate(10deg)",
+                }}
+              />
+            </div>
 
             {/* Title + Text */}
-            <div className="flex flex-col justify-center items-end p-0 gap-4 w-[338px] max-w-[404px] h-20 flex-none order-1 flex-grow z-10">
-              <h3 className="w-[338px] h-10 font-medium text-[49px] leading-10 text-black flex-none order-0 self-stretch flex-grow-0">
+            <div className="flex-1 flex flex-col justify-center items-center gap-4 h-full z-10">
+              <h3 className="font-medium text-[56px] leading-[52px] text-black text-center">
                 AirPods <span className="font-bold">Pro</span>
               </h3>
-              <p className="w-[338px] h-6 font-medium text-sm leading-6 text-[#2D2B2B] flex-none order-1 self-stretch flex-grow-0">
+              <p className="font-medium text-base leading-6 text-[#2D2B2B] text-center">
                 Listen like a Pro
               </p>
             </div>
           </div>
 
           {/* Squares */}
-          <div className="flex flex-row items-start p-0 gap-0 w-[720px] h-[309px] flex-none order-1">
+          <div className="flex flex-row items-start p-0 gap-0 w-full h-[309px] flex-none order-1">
             {/* Square Banner - AirPods Max */}
-            <div
-              className="flex flex-row justify-end items-center bg-[#EDEDED] w-[360px] h-[309px] flex-none order-0 self-stretch flex-grow relative"
-              style={{ padding: "0px 48px 0px 156px" }}
-            >
+            <div className="flex flex-row justify-center items-center bg-[#EDEDED] w-1/2 h-[309px] flex-none order-0 self-stretch flex-grow relative">
               {/* AirPods Max Image */}
               <div
                 className="absolute h-[280px] w-[180px] left-[-80px] top-[15px] flex-none order-1 flex-grow-0 z-10"
@@ -134,24 +130,20 @@ const Home = () => {
               />
 
               {/* Title + Text */}
-              <div className="flex flex-col justify-center items-center p-0 gap-0 w-40 max-w-[168px] h-[143px] flex-none order-0 flex-grow-0 z-0">
-                <h3 className="w-40 h-[120px] font-light text-[29px] leading-10 text-black flex-none order-0 self-stretch flex-grow-0">
+              <div className="flex flex-col justify-center items-center p-0 gap-2 flex-none order-0 flex-grow-0 z-0 ml-16 mr-8">
+                <h3 className="font-light text-[36px] leading-9 text-black text-center">
                   AirPods <span>Max</span>
                 </h3>
-                <p className="w-40 h-12 font-medium text-sm leading-6 text-[#919191] flex-none order-1 self-stretch flex-grow-0 -mt-20">
+                <p className="font-medium text-base leading-5 text-[#919191] text-center max-w-[160px]">
                   Computational audio. Listen, it's powerful
                 </p>
               </div>
             </div>
 
             {/* Square Banner - Vision Pro */}
-            <div
-              className="flex flex-row justify-end items-center bg-[#353535] w-[360px] h-[309px] flex-none order-1 self-stretch flex-grow relative overflow-hidden"
-              style={{ padding: "0px 48px 0px 156px" }}
-            >
+            <div className="flex flex-row justify-center items-center bg-[#353535] w-1/2 h-[309px] flex-none order-1 self-stretch flex-grow relative overflow-hidden">
               {/* Vision Pro Image */}
               <div
-                //desplazar img a la izquierda
                 className="absolute flex-none order-1 flex-grow-0 z-10"
                 style={{
                   backgroundImage: "url(/vision-pro-e1711469754160.png)",
@@ -167,11 +159,11 @@ const Home = () => {
               />
 
               {/* Title + Text */}
-              <div className="flex flex-col justify-center items-center p-0 gap-0 w-40 max-w-[176px] h-36 flex-none order-0 flex-grow-0 z-0">
-                <h3 className="w-40 h-20 font-light text-[29px] leading-10 text-white flex-none order-0 self-stretch flex-grow-0">
+              <div className="flex flex-col justify-center items-center p-0 gap-2 flex-none order-0 flex-grow-0 z-0 ml-16 mr-8">
+                <h3 className="font-light text-[36px] leading-9 text-white text-center">
                   Vision <span className="font-bold">Pro</span>
                 </h3>
-                <p className="w-40 h-[52px] font-medium text-sm leading-6 text-[#919191] flex-none order-1 self-stretch flex-grow-0 -mt-10">
+                <p className="font-medium text-base leading-5 text-[#919191] text-center max-w-[160px]">
                   An immersive way to experience content
                 </p>
               </div>
@@ -182,16 +174,16 @@ const Home = () => {
         {/* Big Banner - MacBook Air */}
         <div
           className="flex flex-row items-center bg-[#EDEDED] w-[720px] h-[637px] flex-none order-1 flex-grow relative overflow-hidden"
-          style={{ padding: "44px 56px 44px 56px" }}
+          style={{ padding: "44px 56px 44px 200px" }}
         >
           {/* Content */}
-          <div className="flex flex-col items-start p-0 gap-4 w-[360px] max-w-[360px] h-[272px] flex-none order-0 flex-grow-0 z-10">
+          <div className="flex flex-col items-start p-0 gap-6 w-[400px] max-w-[400px] h-[272px] flex-none order-0 flex-grow-0 z-10">
             {/* Title + Text */}
-            <div className="flex flex-col items-start p-0 gap-1 w-[360px] h-[200px] flex-none order-0 self-stretch flex-grow-0">
-              <h3 className="w-[360px] h-28 font-thin text-[64px] leading-[56px] text-black flex-none order-0 self-stretch flex-grow-0">
+            <div className="flex flex-col items-start p-0 gap-2 w-[400px] h-[200px] flex-none order-0 self-stretch flex-grow-0">
+              <h3 className="w-[400px] h-28 font-thin text-[72px] leading-[64px] text-black flex-none order-0 self-stretch flex-grow-0">
                 Macbook Air
               </h3>
-              <p className="w-[360px] h-[72px] font-medium text-sm leading-6 text-[#919191] flex-none order-1 self-stretch flex-grow-0 -mt-4">
+              <p className="w-[400px] h-[72px] font-medium text-base leading-6 text-[#919191] flex-none order-1 self-stretch flex-grow-0 -mt-2">
                 The new 15‑inch MacBook Air makes room for more of what you love
                 with a spacious Liquid Retina display.
               </p>
@@ -199,8 +191,8 @@ const Home = () => {
 
             {/* Button */}
             <button
-              className="bg-white text-black border border-white px-10 py-10 rounded-md text-sm font-medium cursor-pointer -mt-6 transition-all duration-300 hover:bg-transparent hover:text-white-500"
-              style={{ padding: "15px 30px", gap: "3px" }}
+              className="bg-white text-black border border-white px-10 py-4 rounded-md text-base font-medium cursor-pointer -mt-4 transition-all duration-300 hover:bg-transparent hover:text-black"
+              style={{ padding: "16px 32px" }}
             >
               Buy Now
             </button>
@@ -286,7 +278,6 @@ const Home = () => {
           products={getProductsToShow()}
           isLoading={getLoadingState()}
           onAddToCart={(product) => addToCart(product.id, 1)}
-          columns={3}
         />
       </section>
     </div>

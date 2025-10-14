@@ -5,16 +5,11 @@ const ProductGrid = ({
   products = [], 
   isLoading = false, 
   onAddToCart,
-  columns = 3,
   emptyMessage = "No products found",
   emptySubMessage = "Try adjusting your search or filter criteria"
 }) => {
-  const gridClasses = {
-    1: 'grid-cols-1',
-    2: 'grid-cols-1 md:grid-cols-2',
-    3: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
-    4: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-  };
+  // Responsive grid classes - adapts automatically to screen size with better proportions
+  const responsiveGridClasses = 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4';
 
   // Show loading spinner while loading
   if (isLoading) {
@@ -40,7 +35,7 @@ const ProductGrid = ({
     <div className="mt-8">
       
       
-      <div className={`grid ${gridClasses[columns]} gap-8 max-w-6xl mx-auto lg:gap-6 md:gap-5`}>
+      <div className={`grid ${responsiveGridClasses} gap-6 mx-auto px-6 lg:gap-5 md:gap-4`}>
         {products.map((product) => (
           <ProductCard 
             key={product.id} 
