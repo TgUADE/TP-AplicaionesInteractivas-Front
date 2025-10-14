@@ -1,14 +1,25 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "./useAuth";
 
-const API_BASE_URL = "http://localhost:8081";
+const API_BASE_URL = "/api";
 const LOCAL_CART_KEY = "temp_cart";
+const CART_UPDATED_EVENT = "cart_updated";
+
+const broadcastCartUpdated = () => {
+  try {
+    window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT));
+  } catch (error) {
+    console.error("Error broadcasting cart updated:", error);
+  }
+};
 
 export const useCart = () => {
   const [cart, setCart] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isGettingCart, setIsGettingCart] = useState(false);
   const { token, isLoggedIn } = useAuth();
 
   const headers = {
@@ -27,6 +38,82 @@ export const useCart = () => {
       console.error("Error loading local cart:", error);
     }
     return [];
+  };
+
+  const syncLocalItemsToCart = async (cart, localItems) => {
+    if (isSyncing) {
+      console.log("🔄 Sincronización ya en progreso, saltando...");
+      return;
+    }
+    setIsSyncing(true);
+    try {
+      console.log(
+        "Sincronizando",
+        localItems.length,
+        "items al carrito",
+        cart.id
+      );
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const item of localItems) {
+        try {
+          console.log(
+            `Agregando producto ${item.productId} cantidad ${item.quantity}`
+          );
+
+          const response = await fetch(
+            `${API_BASE_URL}/carts/${cart.id}/products`,
+            {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                productId: item.productId,
+                quantity: item.quantity,
+              }),
+            }
+          );
+
+          if (response.ok) {
+            console.log(`✅ Producto ${item.productId} agregado correctamente`);
+            successCount++;
+          } else {
+            console.error(
+              `❌ Error agregando producto ${item.productId}:`,
+              response.status,
+              response.statusText
+            );
+            const errorText = await response.text();
+            console.error("Error details:", errorText);
+            errorCount++;
+          }
+        } catch (itemError) {
+          console.error(
+            `❌ Error de red agregando producto ${item.productId}:`,
+            itemError
+          );
+          errorCount++;
+        }
+
+        // Pequeña pausa entre requests para evitar problemas de concurrencia
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+
+      console.log(
+        `Sincronización completada: ${successCount} exitosos, ${errorCount} errores`
+      );
+
+      // Limpiar carrito local solo si al menos algunos productos se sincronizaron
+      if (successCount > 0) {
+        clearLocalCart();
+        console.log("Carrito local limpiado");
+      }
+    } catch (err) {
+      console.error("Error general en sincronización:", err);
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   // Guardar carrito local en localStorage
@@ -76,23 +163,42 @@ export const useCart = () => {
 
   // Obtener carrito del usuario logueado
   const getCart = async () => {
+    if (isGettingCart) {
+      console.log("🔄 getCart ya en progreso, saltando...");
+      return null;
+    }
+
     if (!isLoggedIn) {
-      // Si no está logueado, cargar carrito local
       const localItems = loadLocalCart();
       setCartItems(localItems);
       return null;
     }
 
+    setIsGettingCart(true);
+
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_BASE_URL}/carts`, {
+      const response = await fetch(`${API_BASE_URL}/carts/my-carts`, {
         method: "GET",
         headers,
       });
 
+      console.log("responseACA", response);
+
       if (response.status === 404) {
-        // No hay carrito, crear uno
-        return await createCart();
+        const localItems = loadLocalCart();
+        console.log("no hay carrito en el backend, creando con:", localItems);
+
+        if (localItems.length > 0 && !isSyncing) {
+          console.log("Creando carrito y sincronizando items local");
+          const newCart = await createCart();
+          if (newCart) {
+            await syncLocalItemsToCart(newCart, localItems);
+          }
+          return newCart;
+        } else {
+          return await createCart();
+        }
       }
 
       if (!response.ok) {
@@ -100,61 +206,46 @@ export const useCart = () => {
       }
 
       const cartData = await response.json();
-      setCart(cartData);
+      console.log("cartData", cartData);
+      const userCart = Array.isArray(cartData) ? cartData[0] : cartData;
+      console.log("userCart", userCart);
 
-      if (cartData.productIds && cartData.productIds.length > 0) {
-        await fetchCartItems(cartData);
-      } else {
-        setCartItems([]);
+      if (!userCart) {
+        const localItems = loadLocalCart();
+        console.log("no hay carrito en el backend, creando con:", localItems);
+        if (localItems.length > 0 && !isSyncing) {
+          console.log("Creando carrito y sincronizando items local");
+          const newCart = await createCart();
+          if (newCart) {
+            await syncLocalItemsToCart(newCart, localItems);
+          }
+          return newCart;
+        } else {
+          setCart(null);
+          setCartItems([]);
+          return null;
+        }
       }
 
-      return cartData;
+      setCart(userCart);
+
+      const items = (userCart.cartProducts || [])
+        .map((product) => ({
+          productId: product?.product?.id,
+          quantity: product.quantity,
+          name: product?.product?.name,
+          price: product?.product?.price,
+        }))
+        .filter((item) => item.productId !== null);
+      console.log("items", items);
+      setCartItems(items);
+      return userCart;
     } catch (err) {
       setError(err.message);
       return null;
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // Sincronizar carrito local con el backend cuando el usuario se loguea
-  const syncLocalCartWithBackend = async () => {
-    if (!isLoggedIn || !cart) return;
-
-    const localItems = loadLocalCart();
-    if (localItems.length === 0) return;
-
-    try {
-      setIsLoading(true);
-
-      // Agregar cada item local al carrito del backend
-      for (const item of localItems) {
-        const response = await fetch(
-          `${API_BASE_URL}/carts/${cart.id}/products`,
-          {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              productId: item.productId,
-              quantity: item.quantity,
-            }),
-          }
-        );
-
-        if (!response.ok) {
-          console.error(`Error syncing item ${item.productId}`);
-        }
-      }
-
-      // Limpiar carrito local después de sincronizar
-      clearLocalCart();
-
-      // Refrescar el carrito del backend
-      await getCart();
-    } catch (err) {
-      setError("Error al sincronizar el carrito");
-    } finally {
-      setIsLoading(false);
+      setIsGettingCart(false);
     }
   };
 
@@ -175,6 +266,7 @@ export const useCart = () => {
 
       saveLocalCart(localItems);
       setCartItems(localItems);
+      broadcastCartUpdated();
       return true;
     }
 
@@ -208,9 +300,8 @@ export const useCart = () => {
       const updatedCart = await response.json();
       setCart(updatedCart);
 
-      // Refrescar los items del carrito
-      await fetchCartItems(updatedCart);
-
+      await getCart();
+      broadcastCartUpdated();
       return true;
     } catch (err) {
       setError(err.message);
@@ -236,10 +327,12 @@ export const useCart = () => {
           );
           saveLocalCart(filteredItems);
           setCartItems(filteredItems);
+          broadcastCartUpdated();
         } else {
           existingItem.quantity = quantity;
           saveLocalCart(localItems);
           setCartItems(localItems);
+          broadcastCartUpdated();
         }
       }
       return true;
@@ -264,8 +357,8 @@ export const useCart = () => {
 
       const updatedCart = await response.json();
       setCart(updatedCart);
-      await fetchCartItems(updatedCart);
-
+      await getCart();
+      broadcastCartUpdated();
       return true;
     } catch (err) {
       setError(err.message);
@@ -285,6 +378,7 @@ export const useCart = () => {
       );
       saveLocalCart(filteredItems);
       setCartItems(filteredItems);
+      broadcastCartUpdated();
       return true;
     }
 
@@ -306,8 +400,8 @@ export const useCart = () => {
 
       const updatedCart = await response.json();
       setCart(updatedCart);
-      await fetchCartItems(updatedCart);
-
+      await getCart();
+      broadcastCartUpdated();
       return true;
     } catch (err) {
       setError(err.message);
@@ -329,6 +423,37 @@ export const useCart = () => {
 
     try {
       setIsLoading(true);
+      if (cartItems.length > 0) {
+        console.log("Limpiando carrito en el backend");
+        for (const item of cartItems) {
+          try {
+            const response = await fetch(
+              `${API_BASE_URL}/carts/${cart.id}/product/${item.productId}`,
+              {
+                method: "DELETE",
+                headers,
+              }
+            );
+            if (!response.ok) {
+              console.error(
+                `Error elimnando producto ${item.productId}`,
+                response.status,
+                response.statusText
+              );
+            } else {
+              console.log(
+                `✅ Producto ${item.productId} eliminado correctamente`
+              );
+            }
+          } catch (itemError) {
+            console.error(
+              `Error eliminando producto ${item.productId}`,
+              itemError
+            );
+          }
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+      }
       const response = await fetch(`${API_BASE_URL}/carts/${cart.id}`, {
         method: "DELETE",
         headers,
@@ -340,7 +465,7 @@ export const useCart = () => {
 
       setCart(null);
       setCartItems([]);
-
+      broadcastCartUpdated();
       return true;
     } catch (err) {
       setError(err.message);
@@ -353,29 +478,60 @@ export const useCart = () => {
   // Obtener detalles de los productos del carrito
   const fetchCartItems = async (cartData) => {
     try {
-      // Aquí necesitarías un endpoint para obtener los productos con cantidades
-      // Por ahora simularemos con los productIds
-      const items = cartData.productIds.map((productId) => ({
-        productId,
-        quantity: 1, // Por defecto cantidad 1
-      }));
-      setCartItems(items);
+      if (cartData?.cartProducts?.length) {
+        const items = cartData.cartProducts
+          .map((cp) => ({
+            productId: cp.product?.id,
+            quantity: cp.quantity,
+          }))
+          .filter((it) => !!it.productId);
+        setCartItems(items);
+        return;
+      }
+
+      // Fallback legado si existiera productIds
+      if (cartData?.productIds?.length) {
+        const items = cartData.productIds.map((productId) => ({
+          productId,
+          quantity: 1,
+        }));
+        setCartItems(items);
+        return;
+      }
+
+      setCartItems([]);
     } catch (err) {
       setError("Error al obtener los productos del carrito");
     }
   };
 
-  // Cargar carrito al inicializar
+  // Reemplazar todos los useEffect por este único:
   useEffect(() => {
-    getCart();
-  }, []);
+    console.log("🔄 useEffect ejecutado, isLoggedIn:", isLoggedIn);
 
-  // Sincronizar carrito local cuando el usuario se loguea
-  useEffect(() => {
-    if (isLoggedIn && cart) {
-      syncLocalCartWithBackend();
+    if (isLoggedIn) {
+      const localItems = loadLocalCart();
+      console.log("Usuario logueado, items locales:", localItems);
+      getCart();
+    } else {
+      const localItems = loadLocalCart();
+      setCartItems(localItems);
     }
-  }, [isLoggedIn, cart]);
+  }, [isLoggedIn]);
+
+  // Mantener solo el listener del evento:
+  useEffect(() => {
+    const handler = () => {
+      if (!isLoading && !isGettingCart) {
+        console.log("🔄 Evento recibido, refrescando carrito...");
+        getCart();
+      }
+    };
+    window.addEventListener(CART_UPDATED_EVENT, handler);
+    return () => {
+      window.removeEventListener(CART_UPDATED_EVENT, handler);
+    };
+  }, [isLoggedIn, isLoading, isGettingCart]);
 
   return {
     cart,
