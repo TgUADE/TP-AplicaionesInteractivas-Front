@@ -29,6 +29,8 @@ const Products = () => {
     const success = await addToCart(product.id, 1);
     if (success) {
       console.log(`Producto ${product.name} agregado al carrito`);
+    } else {
+      console.log(`Producto ${product.name} no agregado al carrito`);
     }
   };
 
