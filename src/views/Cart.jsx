@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useCart } from "../hook/useCart";
 import { useProducts } from "../hook/useProducts";
 import { useAuth } from "../hook/useAuth";
@@ -6,6 +7,7 @@ import LoadingSpinner from "../components/UI/LoadingSpinner";
 import Button from "../components/UI/Button";
 
 const Cart = () => {
+  const navigate = useNavigate();
   const {
     cart,
     cartItems,
@@ -57,9 +59,18 @@ const Cart = () => {
     }
   };
 
+  const handleProductClick = (productId, e) => {
+    // Don't navigate if clicking on interactive elements
+    if (e.target.closest('button')) {
+      return;
+    }
+    navigate(`/product/${productId}`);
+  };
+
   const calculateTotal = () => {
     return cartProducts.reduce((total, item) => {
-      return total + (item.product?.current_price || 0) * item.quantity;
+      const price = item.product?.current_price || item.product?.price || 0;
+      return total + price * item.quantity;
     }, 0);
   };
 
@@ -127,7 +138,8 @@ const Cart = () => {
                 {cartProducts.map((item) => (
                   <div
                     key={item.productId}
-                    className="bg-gray-50 rounded-lg p-6 flex items-center space-x-4"
+                    className="bg-gray-50 rounded-lg p-6 flex items-center space-x-4 cursor-pointer "
+                    onClick={(e) => handleProductClick(item.productId, e)}
                   >
                     <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
                       {item.product?.images?.[0]?.imageUrl ? (
@@ -145,29 +157,33 @@ const Cart = () => {
                       <h3 className="font-semibold text-gray-800">
                         {item.product?.name}
                       </h3>
-                      <p className="text-gray-600">${item.product?.current_price}</p>
+                      <p className="text-gray-600">
+                        ${(item.product?.current_price || item.product?.price || 0).toFixed(2)}
+                      </p>
                     </div>
 
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={() =>
+                        onClick={(e) => {
+                          e.stopPropagation();
                           handleQuantityChange(
                             item.productId,
                             item.quantity - 1
-                          )
-                        }
+                          );
+                        }}
                         className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300"
                       >
                         -
                       </button>
                       <span className="w-8 text-center">{item.quantity}</span>
                       <button
-                        onClick={() =>
+                        onClick={(e) => {
+                          e.stopPropagation();
                           handleQuantityChange(
                             item.productId,
                             item.quantity + 1
-                          )
-                        }
+                          );
+                        }}
                         className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300"
                       >
                         +
@@ -176,10 +192,13 @@ const Cart = () => {
 
                     <div className="text-right">
                       <p className="font-semibold">
-                        ${(item.product?.current_price || 0) * item.quantity}
+                        ${((item.product?.current_price || item.product?.price || 0) * item.quantity).toFixed(2)}
                       </p>
                       <button
-                        onClick={() => handleRemoveItem(item.productId)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveItem(item.productId);
+                        }}
                         className="text-red-500 hover:text-red-700 text-sm"
                       >
                         Eliminar
@@ -216,7 +235,7 @@ const Cart = () => {
                       <span>
                         {item.product?.name} x {item.quantity}
                       </span>
-                      <span>${(item.product?.current_price || 0) * item.quantity}</span>
+                      <span>${((item.product?.current_price || item.product?.price || 0) * item.quantity).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
@@ -224,7 +243,7 @@ const Cart = () => {
                 <div className="border-t pt-4">
                   <div className="flex justify-between text-lg font-semibold">
                     <span>Total:</span>
-                    <span>${calculateTotal()}</span>
+                    <span>${calculateTotal().toFixed(2)}</span>
                   </div>
                 </div>
 
