@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 export const useAuth = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [token, setToken] = useState(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Verificar si hay un token en localStorage al cargar
   useEffect(() => {
@@ -11,6 +12,7 @@ export const useAuth = () => {
       setToken(savedToken);
       setIsLoggedIn(true);
     }
+    setIsInitialized(true);
   }, []);
 
   // Función para hacer login y guardar el token
@@ -30,6 +32,7 @@ export const useAuth = () => {
   return {
     isLoggedIn,
     token,
+    isInitialized,
     login,
     logout,
   };

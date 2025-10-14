@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useProduct } from "../hook/useProduct";
 import { useCart } from "../hook/useCart";
+import { useFavoritesContext } from "../context/FavoritesContext";
+import { useAuth } from "../hook/useAuth";
 import HeartIcon from "../icons/HeartIcon";
 import LoadingSpinner from "../components/UI/LoadingSpinner";
 
@@ -10,20 +12,15 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const { product, isLoading, error } = useProduct(id);
   const { addToCart } = useCart();
+  const { toggleFavorite, isFavorite, isLoading: favLoading } = useFavoritesContext();
+  const { isLoggedIn } = useAuth();
   
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [selectedColor, setSelectedColor] = useState(0);
-  const [selectedStorage, setSelectedStorage] = useState(0);
   const [quantity, setQuantity] = useState(1);
 
-  console.log("ProductDetail - ID from params:", id);
-  console.log("ProductDetail - Product:", product);
-  console.log("ProductDetail - Loading:", isLoading);
-  console.log("ProductDetail - Error:", error);
 
   useEffect(() => {
     if (!isLoading && !product && !error) {
-      console.log("Product not found, redirecting to products page");
       navigate('/products');
     }
   }, [product, isLoading, error, navigate]);
@@ -71,9 +68,17 @@ const ProductDetail = () => {
     addToCart(product.id, quantity);
   };
 
-  const handleAddToWishlist = () => {
-    // Implement wishlist functionality
-    console.log("Added to wishlist:", product.id);
+  const handleAddToFavorites = async () => {
+    if (!isLoggedIn) {
+      navigate('/auth');
+      return;
+    }
+
+    if (!product?.id) {
+      return;
+    }
+
+    await toggleFavorite(product.id);
   };
 
   return (
@@ -190,11 +195,16 @@ const ProductDetail = () => {
               {/* Action Buttons */}
               <div className="flex space-x-4">
                 <button
-                  onClick={handleAddToWishlist}
-                  className="flex-1 bg-white text-gray-800 border-2 border-gray-300 px-6 py-4 rounded-lg font-medium transition-all duration-300 hover:border-gray-800 flex items-center justify-center space-x-2"
+                  onClick={handleAddToFavorites}
+                  disabled={favLoading}
+                  className={`flex-1 border-2 px-6 py-4 rounded-lg font-medium transition-all duration-300 flex items-center justify-center space-x-2 ${
+                    isFavorite(product?.id) 
+                      ? 'bg-red-50 text-red-600 border-red-300 hover:border-red-500' 
+                      : 'bg-white text-gray-800 border-gray-300 hover:border-gray-800'
+                  }`}
                 >
-                  <HeartIcon />
-                  <span>Add to Wishlist</span>
+                  <HeartIcon filled={isFavorite(product?.id)} />
+                  <span>{isFavorite(product?.id) ? 'Remove from Favorites' : 'Add to Favorites'}</span>
                 </button>
                 <button
                   onClick={handleAddToCart}

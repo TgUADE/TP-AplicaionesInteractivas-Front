@@ -1,11 +1,14 @@
 import HeartIcon from "../../icons/HeartIcon";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useFavoritesContext } from "../../context/FavoritesContext";
+import { useAuth } from "../../hook/useAuth";
 
 const ProductCard = ({ product, onAddToCart }) => {
-  console.log("En product card", product);
-
   const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
+  const { toggleFavorite, isFavorite, isLoading: favLoading } = useFavoritesContext();
+  
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const getCurrentImage = () => {
@@ -34,17 +37,27 @@ const ProductCard = ({ product, onAddToCart }) => {
   const hasMultipleImages = product.images && product.images.length > 1;
 
   const handleCardClick = (e) => {
-    console.log("Card clicked for product:", product.id);
-    console.log("Event target:", e.target);
-    
     // Don't navigate if clicking on interactive elements
     if (e.target.closest('button') || e.target.closest('.heart-icon')) {
-      console.log("Clicked on interactive element, not navigating");
       return;
     }
     
-    console.log("Navigating to:", `/product/${product.id}`);
     navigate(`/product/${product.id}`);
+  };
+
+  const handleFavoriteClick = async (e) => {
+    e.stopPropagation();
+    
+    if (!isLoggedIn) {
+      navigate('/auth');
+      return;
+    }
+
+    if (!product.id) {
+      return;
+    }
+
+    await toggleFavorite(product.id);
   };
 
   return (
@@ -62,9 +75,14 @@ const ProductCard = ({ product, onAddToCart }) => {
         </div>
       )}
       
-      <div className="absolute top-5 right-5 text-xl cursor-pointer z-10 heart-icon">
-        <HeartIcon />
-      </div>
+      <button 
+        className="absolute top-5 right-5 text-xl cursor-pointer z-10 heart-icon p-2 rounded-full hover:bg-white/20 transition-all duration-300"
+        onClick={handleFavoriteClick}
+        disabled={favLoading}
+        aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
+      >
+        <HeartIcon filled={isFavorite(product.id)} />
+      </button>
       
       <div className="p-5">
         <div className="h-60 flex items-center justify-center mb-5 relative group">

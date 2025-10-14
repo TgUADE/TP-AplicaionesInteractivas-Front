@@ -31,7 +31,6 @@ const Home = () => {
       }
     })();
     
-    console.log(`Active section: ${activeSection}, Products to show:`, result);
     return result;
   };
 

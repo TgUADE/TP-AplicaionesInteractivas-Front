@@ -18,13 +18,10 @@ const Auth = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    console.log("=== LOGIN ATTEMPT ===");
-    console.log("Email:", email);
-    console.log("Password:", password);
-    console.log("Request body:", JSON.stringify({ email, password }));
+    
 
     try {
-      console.log("Making POST request to API...");
+      
       const response = await fetch("/api/v1/auth/login", {
         method: "POST",
         headers: {
@@ -33,45 +30,36 @@ const Auth = () => {
         body: JSON.stringify({ email, password }),
       });
 
-      console.log("Response status:", response.status);
-      console.log("Response ok:", response.ok);
+      
 
       const data = await response.json();
-      console.log("Response data:", data);
+      
 
       if (response.ok) {
-        console.log("Login successful! Token received:", data.access_token);
+        
 
         // Usar el hook para guardar el token en localStorage
         login(data.access_token);
 
         // Redirigir al home después del login exitoso
         navigate("/home");
-        console.log("Token saved to state");
+        
       } else {
-        console.error("Login failed:", data.message);
+        
         alert("Login failed: " + (data.message || "Unknown error"));
       }
     } catch (error) {
-      console.error("Network error or other issue:", error);
+      
       alert("Network error: " + error.message);
     }
 
-    console.log("=== END LOGIN ATTEMPT ===");
+    
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
 
-    console.log("=== REGISTER ATTEMPT ===");
-    console.log("Name:", name);
-    console.log("Surname:", surname);
-    console.log("Email:", email);
-    console.log("Password:", password);
-    console.log(
-      "Request body:",
-      JSON.stringify({ name, surname, email, password })
-    );
+    
 
     try {
       console.log("Making POST request to register API...");
@@ -83,20 +71,16 @@ const Auth = () => {
         body: JSON.stringify({ name, surname, email, password }),
       });
 
-      console.log("Response status:", response.status);
-      console.log("Response ok:", response.ok);
-
+      
       const data = await response.json();
-      console.log("Response data:", data);
+     
 
       if (response.ok) {
-        console.log("Registration successful!");
+       
         alert("Registration successful! You can now login.");
         setIsLogin(true); // Switch to login mode after successful registration
       } else {
-        console.error("Registration failed:", data.message);
-        console.error("Full error data:", data);
-
+        
         // Show detailed validation errors if available
         if (data.errors && Array.isArray(data.errors)) {
           const errorMessages = data.errors
@@ -111,11 +95,11 @@ const Auth = () => {
         }
       }
     } catch (error) {
-      console.error("Network error or other issue:", error);
+      
       alert("Network error: " + error.message);
     }
 
-    console.log("=== END REGISTER ATTEMPT ===");
+    
   };
 
   return (
@@ -123,7 +107,7 @@ const Auth = () => {
       {/* Header */}
       <div className="w-full max-w-md">
         <h1 className="text-4xl font-semibold text-black mb-16 text-left">
-          {isLogin ? "Sign In for checkout." : "Create Account"}
+          {isLogin ? "Sign In for checkout & other features." : "Create Account"}
         </h1>
       </div>
 
@@ -221,16 +205,6 @@ const Auth = () => {
           </p>
         </div>
 
-        {isLoggedIn && token && (
-          <div className="mt-8 p-4 bg-green-50 border border-green-200 rounded-full">
-            <p className="text-green-700 font-medium text-center">
-              Login Successful!
-            </p>
-            <p className="text-xs text-green-600 mt-1 text-center">
-              Token received
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

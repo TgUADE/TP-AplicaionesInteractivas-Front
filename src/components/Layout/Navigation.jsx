@@ -5,10 +5,12 @@ import CartIcon from "../../icons/CartIcon";
 import HeartIcon from "../../icons/HeartIcon";
 import SearchIcon from "../../icons/SearchIcon";
 import { useCart } from "../../hook/useCart";
+import { useFavoritesContext } from "../../context/FavoritesContext";
 
 const Navigation = () => {
   const location = useLocation();
   const { cartItemCount, isLocalCart } = useCart();
+  const { favorites } = useFavoritesContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navLinkClass = (path) => 
@@ -30,8 +32,7 @@ const Navigation = () => {
           <img
             src="/mapple-logo.png"
             alt="Mapple Logo"
-            //make the logo bigger
-            //it does not work
+            
             className="w-16 h-16 sm:w-20 sm:h-20 object-contain"
             
           />
@@ -79,10 +80,12 @@ const Navigation = () => {
           </button>
           
           <Link
-            to="/wishlist"
-            className="text-xl sm:text-2xl p-1 sm:p-2 rounded-full hover:bg-gray-50 transition-all duration-300"
+            to="/favorites"
+            className="text-xl sm:text-2xl p-1 sm:p-2 rounded-full hover:bg-gray-50 relative transition-all duration-300"
           >
             <HeartIcon />
+            
+          
           </Link>
           <Link
             to="/cart"
