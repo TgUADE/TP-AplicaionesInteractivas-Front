@@ -3,17 +3,46 @@ import { Link } from "react-router-dom";
 import ProductGrid from "../components/Product/ProductGrid";
 import CategoryNav from "../components/Category/CategoryNav";
 import { useProducts } from "../hook/useProducts";
+import { usePromotions } from "../hook/usePromotions";
 
 const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [activeSection, setActiveSection] = useState("deals"); // "deals", "bestseller", "featured"
+  
   const { products, categories, isLoading, filterProductsByCategory } =
     useProducts();
+  const { promotionalProducts, isLoadingPromotions } = usePromotions();
 
   const filteredProducts = filterProductsByCategory(
     products,
     categories,
     selectedCategory
   );
+
+  // Function to get products based on active section
+  const getProductsToShow = () => {
+    const result = (() => {
+      switch(activeSection) {
+        case 'deals': return promotionalProducts;
+        case 'bestseller': return filteredProducts; // Show all products for now
+        case 'featured': return filteredProducts; // Show all products for now
+        default: return promotionalProducts;
+      }
+    })();
+    
+    console.log(`Active section: ${activeSection}, Products to show:`, result);
+    return result;
+  };
+
+  // Function to get loading state based on active section
+  const getLoadingState = () => {
+    switch(activeSection) {
+      case 'deals': return isLoadingPromotions;
+      case 'bestseller': return isLoading;
+      case 'featured': return isLoading;
+      default: return isLoadingPromotions;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white w-full">
@@ -195,30 +224,51 @@ const Home = () => {
             showAllButton={false}
           />
           <div className="flex gap-8 lg:gap-5">
-            <Link
-              to="/new"
-              className="text-gray-800 no-underline font-semibold text-base pb-1 border-b-2 border-gray-800 transition-all duration-300 hover:text-gray-800 hover:border-gray-800"
+            <button
+              onClick={() => {
+                setActiveSection("deals");
+                setSelectedCategory("all");
+              }}
+              className={`font-medium text-base pb-1 border-b-2 transition-all duration-300 hover:text-gray-800 hover:border-gray-800 ${
+                activeSection === "deals" 
+                  ? "text-gray-800 border-gray-800 font-semibold" 
+                  : "text-gray-600 border-transparent"
+              }`}
             >
-              New Arrival
-            </Link>
-            <Link
-              to="/bestseller"
-              className="text-gray-600 no-underline font-medium text-base pb-1 border-b-2 border-transparent transition-all duration-300 hover:text-gray-800 hover:border-gray-800"
+              Deals
+            </button>
+            <button
+              onClick={() => {
+                setActiveSection("bestseller");
+                setSelectedCategory("all");
+              }}
+              className={`font-medium text-base pb-1 border-b-2 transition-all duration-300 hover:text-gray-800 hover:border-gray-800 ${
+                activeSection === "bestseller" 
+                  ? "text-gray-800 border-gray-800 font-semibold" 
+                  : "text-gray-600 border-transparent"
+              }`}
             >
               Bestseller
-            </Link>
-            <Link
-              to="/featured"
-              className="text-gray-600 no-underline font-medium text-base pb-1 border-b-2 border-transparent transition-all duration-300 hover:text-gray-800 hover:border-gray-800"
+            </button>
+            <button
+              onClick={() => {
+                setActiveSection("featured");
+                setSelectedCategory("all");
+              }}
+              className={`font-medium text-base pb-1 border-b-2 transition-all duration-300 hover:text-gray-800 hover:border-gray-800 ${
+                activeSection === "featured" 
+                  ? "text-gray-800 border-gray-800 font-semibold" 
+                  : "text-gray-600 border-transparent"
+              }`}
             >
               Featured Products
-            </Link>
+            </button>
           </div>
         </div>
 
         <ProductGrid
-          products={filteredProducts}
-          isLoading={isLoading}
+          products={getProductsToShow()}
+          isLoading={getLoadingState()}
           onAddToCart={(product) => console.log("Add to cart:", product)}
           columns={3}
         />

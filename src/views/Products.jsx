@@ -104,19 +104,24 @@ const Products = () => {
       );
       console.log("Selected category:", selectedCategory);
       console.log("Found category object:", selectedCategoryObj);
-      console.log("Product category:", product.category);
+      console.log("Product category info:", {
+        category: product.category,
+        category_id: product.category_id,
+        category_name: product.category_name
+      });
 
-      if (selectedCategoryObj && product.category) {
-        // Compare the category IDs
-        matchesCategory = product.category.id === selectedCategoryObj.id;
-        console.log(
-          "Category match:",
-          matchesCategory,
-          "Expected:",
-          selectedCategoryObj.id,
-          "Actual:",
-          product.category.id
-        );
+      if (selectedCategoryObj) {
+        // Try different possible category structures
+        if (product.category_id) {
+          matchesCategory = product.category_id === selectedCategoryObj.id;
+          console.log("Category match (category_id):", matchesCategory, "Expected:", selectedCategoryObj.id, "Actual:", product.category_id);
+        } else if (product.category && product.category.id) {
+          matchesCategory = product.category.id === selectedCategoryObj.id;
+          console.log("Category match (category.id):", matchesCategory, "Expected:", selectedCategoryObj.id, "Actual:", product.category.id);
+        } else if (product.category_name) {
+          matchesCategory = product.category_name === selectedCategoryObj.description;
+          console.log("Category match (category_name):", matchesCategory, "Expected:", selectedCategoryObj.description, "Actual:", product.category_name);
+        }
       }
     }
 
@@ -139,9 +144,9 @@ const Products = () => {
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     switch (sortBy) {
       case "price-low":
-        return (a.price || 0) - (b.price || 0);
+        return (a.current_price || 0) - (b.current_price || 0);
       case "price-high":
-        return (b.price || 0) - (a.price || 0);
+        return (b.current_price || 0) - (a.current_price || 0);
       case "name":
       default:
         return (a.name || "").localeCompare(b.name || "");

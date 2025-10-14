@@ -38,9 +38,7 @@ const ProductGrid = ({
 
   return (
     <div className="mt-8">
-      <div className="mb-4 text-sm text-gray-600">
-        Showing {products.length} products
-      </div>
+      
       
       <div className={`grid ${gridClasses[columns]} gap-8 max-w-6xl mx-auto lg:gap-6 md:gap-5`}>
         {products.map((product) => (

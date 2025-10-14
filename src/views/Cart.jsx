@@ -59,7 +59,7 @@ const Cart = () => {
 
   const calculateTotal = () => {
     return cartProducts.reduce((total, item) => {
-      return total + (item.product?.price || 0) * item.quantity;
+      return total + (item.product?.current_price || 0) * item.quantity;
     }, 0);
   };
 
@@ -145,7 +145,7 @@ const Cart = () => {
                       <h3 className="font-semibold text-gray-800">
                         {item.product?.name}
                       </h3>
-                      <p className="text-gray-600">${item.product?.price}</p>
+                      <p className="text-gray-600">${item.product?.current_price}</p>
                     </div>
 
                     <div className="flex items-center space-x-2">
@@ -176,7 +176,7 @@ const Cart = () => {
 
                     <div className="text-right">
                       <p className="font-semibold">
-                        ${(item.product?.price || 0) * item.quantity}
+                        ${(item.product?.current_price || 0) * item.quantity}
                       </p>
                       <button
                         onClick={() => handleRemoveItem(item.productId)}
@@ -216,7 +216,7 @@ const Cart = () => {
                       <span>
                         {item.product?.name} x {item.quantity}
                       </span>
-                      <span>${(item.product?.price || 0) * item.quantity}</span>
+                      <span>${(item.product?.current_price || 0) * item.quantity}</span>
                     </div>
                   ))}
                 </div>
