@@ -17,16 +17,28 @@ export const useAuth = () => {
 
   // Función para hacer login y guardar el token
   const login = (newToken) => {
+    console.log("🔐 Login: Guardando token:", newToken ? "✓" : "✗");
     localStorage.setItem("authToken", newToken);
     setToken(newToken);
     setIsLoggedIn(true);
+    
+    // Disparar evento después de que React actualice el estado
+    // Usar setTimeout con 0ms pone el evento al final de la cola de eventos
+    setTimeout(() => {
+      console.log("📢 Disparando evento user_logged_in");
+      window.dispatchEvent(new CustomEvent("user_logged_in", { detail: { token: newToken } }));
+    }, 0);
   };
 
   // Función para hacer logout
   const logout = () => {
     localStorage.removeItem("authToken");
+    localStorage.removeItem("temp_cart"); // Limpiar carrito temporal
     setToken(null);
     setIsLoggedIn(false);
+    
+    // Disparar evento para que otros componentes limpien sus estados
+    window.dispatchEvent(new CustomEvent("user_logged_out"));
   };
 
   return {

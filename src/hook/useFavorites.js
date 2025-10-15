@@ -49,7 +49,7 @@ export const useFavorites = () => {
   }, [isLoggedIn, token, headers]);
 
   // Add product to favorites
-  const addToFavorites = async (productId) => {
+  const addToFavorites = useCallback(async (productId) => {
     
     if (!isLoggedIn || !token) {
       setError("Debes iniciar sesión para agregar favoritos");
@@ -84,10 +84,10 @@ export const useFavorites = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isLoggedIn, token, headers]);
 
   // Remove product from favorites
-  const removeFromFavorites = async (productId) => {
+  const removeFromFavorites = useCallback(async (productId) => {
     if (!isLoggedIn || !token) {
       setError("Debes iniciar sesión para gestionar favoritos");
       return false;
@@ -118,10 +118,10 @@ export const useFavorites = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isLoggedIn, token, headers]);
 
   // Toggle favorite status using the dedicated endpoint
-  const toggleFavorite = async (productId) => {
+  const toggleFavorite = useCallback(async (productId) => {
     
     if (!productId) {
       setError("ID de producto requerido");
@@ -137,7 +137,7 @@ export const useFavorites = () => {
     setError(null);
 
     // Optimistic update: change UI immediately
-    const wasAlreadyFavorite = isFavorite(productId);
+    const wasAlreadyFavorite = favorites.some(fav => fav.product.id === productId);
     
     // Update favorites list optimistically
     if (wasAlreadyFavorite) {
@@ -185,21 +185,56 @@ export const useFavorites = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isLoggedIn, token, headers, favorites, fetchFavorites]);
 
   // Check if product is favorite
-  const isFavorite = (productId) => {
+  const isFavorite = useCallback((productId) => {
     return favorites.some(fav => fav.product.id === productId);
-  };
+  }, [favorites]);
 
-  // Load favorites when user logs in
+  // Cargar favoritos cuando cambia el estado de autenticación
   useEffect(() => {
-    if (isLoggedIn && token) {
-      fetchFavorites();
-    } else {
+    console.log("🔄 useFavorites: Estado cambió - isLoggedIn:", isLoggedIn, "token:", token ? "✓" : "✗");
+    
+    const loadFavorites = async () => {
+      if (isLoggedIn && token) {
+        console.log("✅ Usuario autenticado, cargando favoritos...");
+        await fetchFavorites();
+      } else {
+        console.log("❌ Sin autenticación, limpiando favoritos");
+        setFavorites([]);
+      }
+    };
+
+    loadFavorites();
+  }, [isLoggedIn, token]);
+
+  // Listener para eventos de login/logout
+  useEffect(() => {
+    const handleLogout = () => {
+      console.log("🚪 Evento LOGOUT recibido");
       setFavorites([]);
-    }
-  }, [isLoggedIn, token, fetchFavorites]);
+      setError(null);
+    };
+    
+    const handleLogin = async () => {
+      console.log("🔐 Evento LOGIN recibido");
+      // Esperar un momento para que el token se haya guardado
+      await new Promise(resolve => setTimeout(resolve, 200));
+      if (token && !isLoading) {
+        console.log("❤️ Cargando favoritos tras login...");
+        await fetchFavorites();
+      }
+    };
+    
+    window.addEventListener("user_logged_out", handleLogout);
+    window.addEventListener("user_logged_in", handleLogin);
+    
+    return () => {
+      window.removeEventListener("user_logged_out", handleLogout);
+      window.removeEventListener("user_logged_in", handleLogin);
+    };
+  }, [token, isLoading]);
 
   return {
     favorites,

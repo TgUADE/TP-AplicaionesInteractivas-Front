@@ -505,33 +505,66 @@ export const useCart = () => {
     }
   };
 
-  // Reemplazar todos los useEffect por este único:
+  // Cargar carrito cuando cambia el estado de autenticación
   useEffect(() => {
-    console.log("🔄 useEffect ejecutado, isLoggedIn:", isLoggedIn);
+    console.log("🔄 useCart: Estado cambió - isLoggedIn:", isLoggedIn, "token:", token ? "✓" : "✗");
 
-    if (isLoggedIn) {
-      const localItems = loadLocalCart();
-      console.log("Usuario logueado, items locales:", localItems);
-      getCart();
-    } else {
-      const localItems = loadLocalCart();
-      setCartItems(localItems);
-    }
-  }, [isLoggedIn]);
+    const loadCart = async () => {
+      if (isLoggedIn && token) {
+        const localItems = loadLocalCart();
+        console.log("✅ Usuario autenticado, items locales:", localItems.length);
+        console.log("🛒 Cargando carrito del backend...");
+        await getCart();
+      } else {
+        console.log("❌ Sin autenticación, usando carrito local");
+        const localItems = loadLocalCart();
+        setCartItems(localItems);
+      }
+    };
 
-  // Mantener solo el listener del evento:
+    loadCart();
+  }, [isLoggedIn, token]);
+
+  // Listener para eventos de actualización del carrito
   useEffect(() => {
-    const handler = () => {
-      if (!isLoading && !isGettingCart) {
-        console.log("🔄 Evento recibido, refrescando carrito...");
-        getCart();
+    const handler = async () => {
+      if (!isLoading && !isGettingCart && isLoggedIn && token) {
+        console.log("🔄 Evento CART_UPDATED recibido");
+        await getCart();
       }
     };
     window.addEventListener(CART_UPDATED_EVENT, handler);
-    return () => {
-      window.removeEventListener(CART_UPDATED_EVENT, handler);
+    return () => window.removeEventListener(CART_UPDATED_EVENT, handler);
+  }, [isLoggedIn, token, isLoading, isGettingCart]);
+
+  // Listener para eventos de login/logout
+  useEffect(() => {
+    const handleLogout = () => {
+      console.log("🚪 Evento LOGOUT recibido");
+      setCart(null);
+      setCartItems([]);
+      setError(null);
+      clearLocalCart();
     };
-  }, [isLoggedIn, isLoading, isGettingCart]);
+    
+    const handleLogin = async () => {
+      console.log("🔐 Evento LOGIN recibido");
+      // Esperar un momento para que el token se haya guardado
+      await new Promise(resolve => setTimeout(resolve, 200));
+      if (token && !isLoading && !isGettingCart) {
+        console.log("📦 Cargando carrito tras login...");
+        await getCart();
+      }
+    };
+    
+    window.addEventListener("user_logged_out", handleLogout);
+    window.addEventListener("user_logged_in", handleLogin);
+    
+    return () => {
+      window.removeEventListener("user_logged_out", handleLogout);
+      window.removeEventListener("user_logged_in", handleLogin);
+    };
+  }, [token, isLoading, isGettingCart]);
 
   return {
     cart,
