@@ -54,7 +54,7 @@ const Cart = () => {
   };
 
   const handleClearCart = async () => {
-    if (window.confirm("¿Estás seguro de que quieres vaciar el carrito?")) {
+    if (window.confirm("¿Are you sure you want to clear the cart?")) {
       await clearCart();
     }
   };
@@ -78,7 +78,9 @@ const Cart = () => {
     return (
       <div className="min-h-screen bg-white w-full">
         <div className="container mx-auto px-4 py-8">
-          <LoadingSpinner />
+          <div className="flex justify-center items-center py-20">
+            <LoadingSpinner size="large" text="Loading cart..." />
+          </div>
         </div>
       </div>
     );
@@ -91,7 +93,7 @@ const Cart = () => {
           <div className="text-center">
             <h1 className="text-3xl font-bold text-gray-800 mb-4">Error</h1>
             <p className="text-red-600 mb-4">{error}</p>
-            <Button onClick={() => window.location.reload()}>Reintentar</Button>
+            <Button onClick={() => window.location.reload()}>Retry</Button>
           </div>
         </div>
       </div>
@@ -103,16 +105,16 @@ const Cart = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-800">
-            Carrito de Compras
+            Shopping Cart
           </h1>
           {isLocalCart && (
             <div className="flex items-center gap-2 text-sm text-orange-600 bg-orange-50 px-3 py-2 rounded-lg">
               <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-              Carrito temporal -{" "}
+              Temporary cart -{" "}
               <a href="/auth" className="underline">
-                Inicia sesión
+                Log in
               </a>{" "}
-              para guardar tu carrito
+              to save your cart
             </div>
           )}
         </div>
@@ -121,13 +123,13 @@ const Cart = () => {
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🛒</div>
             <h2 className="text-2xl font-semibold text-gray-700 mb-2">
-              Tu carrito está vacío
+              Your cart is empty
             </h2>
             <p className="text-gray-500 mb-6">
-              Agrega algunos productos para comenzar
+              Add some products to get started
             </p>
             <Button onClick={() => (window.location.href = "/products")}>
-              Ver Productos
+              View Products
             </Button>
           </div>
         ) : (
@@ -201,7 +203,7 @@ const Cart = () => {
                         }}
                         className="text-red-500 hover:text-red-700 text-sm"
                       >
-                        Eliminar
+                        Delete
                       </button>
                     </div>
                   </div>
@@ -214,7 +216,7 @@ const Cart = () => {
                   onClick={handleClearCart}
                   className="text-red-600 border-red-600 hover:bg-red-50"
                 >
-                  Vaciar Carrito
+                  Empty Cart
                 </Button>
               </div>
             </div>
@@ -223,7 +225,7 @@ const Cart = () => {
             <div className="lg:col-span-1">
               <div className="bg-gray-50 rounded-lg p-6 sticky top-4">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                  Resumen del Pedido
+                  Order Summary
                 </h2>
 
                 <div className="space-y-2 mb-4">
@@ -248,12 +250,12 @@ const Cart = () => {
                 </div>
 
                 <Button className="w-full mt-4" disabled={isLoading}>
-                  {isLoading ? "Procesando..." : "Proceder al Pago"}
+                  {isLoading ? "Processing..." : "Proceed to Checkout"}
                 </Button>
 
                 {isLocalCart && (
                   <p className="text-xs text-gray-500 mt-2 text-center">
-                    Inicia sesión para proceder al pago
+                    Log in to proceed to checkout
                   </p>
                 )}
               </div>
