@@ -53,9 +53,36 @@ const ProductDetail = () => {
     { size: "1TB", price: (product.currentPrice || product.price) + 400, available: true }
   ];
 
+  // Ordenar imágenes por displayOrder
+  const getSortedImages = () => {
+    if (!product.images || product.images.length === 0) {
+      return [];
+    }
+
+    // Crear una copia del array para no mutar el original
+    const images = [...product.images];
+
+    // Ordenar por displayOrder
+    return images.sort((a, b) => {
+      // Si ambas tienen displayOrder, ordenar por ese valor
+      if (a.displayOrder !== undefined && b.displayOrder !== undefined) {
+        return a.displayOrder - b.displayOrder;
+      }
+      
+      // Si solo una tiene displayOrder, va primero
+      if (a.displayOrder !== undefined) return -1;
+      if (b.displayOrder !== undefined) return 1;
+      
+      // Si ninguna tiene displayOrder, mantener orden original
+      return 0;
+    });
+  };
+
+  const sortedImages = getSortedImages();
+
   const getCurrentImage = () => {
-    if (product.images && product.images.length > 0) {
-      return product.images[selectedImageIndex].imageUrl;
+    if (sortedImages.length > 0) {
+      return sortedImages[selectedImageIndex].imageUrl;
     }
     return null;
   };
@@ -102,11 +129,11 @@ const ProductDetail = () => {
             </div>
 
             {/* Thumbnail Images */}
-            {product.images && product.images.length > 1 && (
+            {sortedImages.length > 1 && (
               <div className="flex space-x-4 overflow-x-auto">
-                {product.images.map((image, index) => (
+                {sortedImages.map((image, index) => (
                   <button
-                    key={index}
+                    key={image.id || index}
                     onClick={() => setSelectedImageIndex(index)}
                     className={`flex-shrink-0 w-20 h-20 bg-gray-50 rounded-lg border-2 p-2 transition-all duration-300 ${
                       selectedImageIndex === index 

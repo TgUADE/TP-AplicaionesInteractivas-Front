@@ -11,30 +11,57 @@ const ProductCard = ({ product, onAddToCart }) => {
   
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  // Ordenar imágenes por displayOrder
+  const getSortedImages = () => {
+    if (!product.images || product.images.length === 0) {
+      return [];
+    }
+
+    // Crear una copia del array para no mutar el original
+    const images = [...product.images];
+
+    // Ordenar por displayOrder
+    return images.sort((a, b) => {
+      // Si ambas tienen displayOrder, ordenar por ese valor
+      if (a.displayOrder !== undefined && b.displayOrder !== undefined) {
+        return a.displayOrder - b.displayOrder;
+      }
+      
+      // Si solo una tiene displayOrder, va primero
+      if (a.displayOrder !== undefined) return -1;
+      if (b.displayOrder !== undefined) return 1;
+      
+      // Si ninguna tiene displayOrder, mantener orden original
+      return 0;
+    });
+  };
+
+  const sortedImages = getSortedImages();
+
   const getCurrentImage = () => {
-    if (product.images && product.images.length > 0) {
-      return product.images[currentImageIndex].imageUrl;
+    if (sortedImages.length > 0) {
+      return sortedImages[currentImageIndex].imageUrl;
     }
     return null;
   };
 
   const goToPreviousImage = () => {
-    if (product.images && product.images.length > 0) {
+    if (sortedImages.length > 0) {
       setCurrentImageIndex((prev) =>
-        prev === 0 ? product.images.length - 1 : prev - 1
+        prev === 0 ? sortedImages.length - 1 : prev - 1
       );
     }
   };
 
   const goToNextImage = () => {
-    if (product.images && product.images.length > 0) {
+    if (sortedImages.length > 0) {
       setCurrentImageIndex((prev) =>
-        prev === product.images.length - 1 ? 0 : prev + 1
+        prev === sortedImages.length - 1 ? 0 : prev + 1
       );
     }
   };
 
-  const hasMultipleImages = product.images && product.images.length > 1;
+  const hasMultipleImages = sortedImages.length > 1;
 
   const handleCardClick = (e) => {
     // Don't navigate if clicking on interactive elements

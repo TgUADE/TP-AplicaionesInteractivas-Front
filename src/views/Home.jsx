@@ -67,7 +67,9 @@ const Home = () => {
             <p className="text-lg m-0 mb-8 opacity-90 leading-relaxed font-light max-w-lg">
               Created to change everything for the better. For everyone.
             </p>
-            <button className="bg-transparent text-white border border-white px-6 py-3 rounded-md text-sm font-medium cursor-pointer transition-all duration-300 hover:bg-white hover:text-orange-500">
+            <button 
+            onClick={() => handleBannerClick("250bbd60-28b4-4328-8e03-2aed5a8b7e0a")} 
+            className="bg-transparent text-white border border-white px-6 py-3 rounded-md text-sm font-medium cursor-pointer transition-all duration-300 hover:bg-white hover:text-orange-500">
               Buy Now
             </button>
           </div>
@@ -124,7 +126,9 @@ const Home = () => {
           {/* Squares */}
           <div className="flex flex-row items-start p-0 gap-0 w-full h-[309px] flex-none order-1">
             {/* Square Banner - AirPods Max */}
-            <div className="flex flex-row justify-center items-center bg-[#EDEDED] w-1/2 h-[309px] flex-none order-0 self-stretch flex-grow relative overflow-hidden">
+            <div 
+            onClick={() => handleBannerClick("cb82397b-7313-4e0f-b7a6-2c3d6695cb16")} 
+            className="cursor-pointer flex flex-row justify-center items-center bg-[#EDEDED] w-1/2 h-[309px] flex-none order-0 self-stretch flex-grow relative overflow-hidden">
               {/* AirPods Max Image */}
               <div
                 className="absolute h-[280px] w-[180px] left-[-80px] top-[15px] flex-none order-1 flex-grow-0 z-10 xl:h-[240px] xl:w-[160px] xl:left-[-70px] lg:h-[200px] lg:w-[140px] lg:left-[-60px] md:h-[160px] md:w-[120px] md:left-[-50px] sm:h-[130px] sm:w-[100px] sm:left-[-40px]"
@@ -148,7 +152,9 @@ const Home = () => {
             </div>
 
             {/* Square Banner - Vision Pro */}
-            <div className="flex flex-row justify-center items-center bg-[#353535] w-1/2 h-[309px] flex-none order-1 self-stretch flex-grow relative overflow-hidden">
+            <div 
+            onClick={() => handleBannerClick("de7f3bf8-3111-4cf7-8030-7e085511a69a")}
+            className="cursor-pointer flex flex-row justify-center items-center bg-[#353535] w-1/2 h-[309px] flex-none order-1 self-stretch flex-grow relative overflow-hidden">
               {/* Vision Pro Image */}
               <div
                 className="absolute flex-none order-1 flex-grow-0 z-10 xl:!w-[180px] xl:!h-[250px] xl:!left-[-80px] lg:!w-[160px] lg:!h-[220px] lg:!left-[-70px] md:!w-[140px] md:!h-[190px] md:!left-[-60px] sm:!w-[120px] sm:!h-[160px] sm:!left-[-50px]"
@@ -198,6 +204,7 @@ const Home = () => {
 
             {/* Button */}
             <button
+              onClick={() => handleBannerClick("d442976f-7032-42d5-948d-3200298d89af")}
               className="bg-white text-black border border-white px-10 py-4 rounded-md text-base font-medium cursor-pointer transition-all duration-300 hover:bg-transparent hover:text-black lg:px-8 lg:py-3 lg:text-sm md:px-6 md:py-2 md:text-xs sm:px-4 sm:py-2 sm:text-[10px]"
               style={{ padding: "16px 32px" }}
             >

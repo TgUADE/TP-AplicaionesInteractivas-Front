@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import UserIcon from "../../icons/UserIcon";
 import CartIcon from "../../icons/CartIcon";
 import HeartIcon from "../../icons/HeartIcon";
@@ -9,9 +9,11 @@ import { useFavoritesContext } from "../../context/FavoritesContext";
 
 const Navigation = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { cartItemCount, isLocalCart } = useCart();
   const { favorites } = useFavoritesContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const navLinkClass = (path) => 
     `text-gray-800 no-underline font-medium text-base transition-all duration-300 py-2 relative ${
@@ -19,6 +21,19 @@ const Navigation = () => {
         ? "text-primary-500 font-semibold"
         : "hover:text-primary-500"
     }`;
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchTerm.trim())}`);
+      setSearchTerm("");
+      setIsMenuOpen(false);
+    }
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
 
   return (
     <nav className="bg-white shadow-lg sticky top-0 z-50 backdrop-blur-md w-full">
@@ -41,16 +56,18 @@ const Navigation = () => {
 
         {/* Barra de búsqueda - oculta en móvil */}
         <div className="hidden md:flex flex-1 max-w-md mx-4 lg:mx-10">
-          <div className="relative w-full">
+          <form onSubmit={handleSearch} className="relative w-full">
             <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-lg text-gray-600">
               <SearchIcon />
             </span>
             <input
               type="text"
-              placeholder="Search"
+              placeholder="Search products..."
+              value={searchTerm}
+              onChange={handleSearchChange}
               className="w-full py-3 px-4 pl-12 border border-gray-300 rounded-full bg-gray-50 text-base outline-none transition-all duration-300 focus:border-gray-800 focus:bg-white focus:shadow-lg"
             />
-          </div>
+          </form>
         </div>
 
         {/* Menú desktop - oculto en móvil */}
@@ -124,16 +141,18 @@ const Navigation = () => {
         <div className="px-4 py-4 bg-white border-t border-gray-100">
           {/* Búsqueda móvil expandida */}
           <div className="md:hidden mb-4">
-            <div className="relative">
+            <form onSubmit={handleSearch} className="relative">
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600">
                 <SearchIcon />
               </span>
               <input
                 type="text"
                 placeholder="Search products..."
+                value={searchTerm}
+                onChange={handleSearchChange}
                 className="w-full py-2 px-3 pl-10 border border-gray-300 rounded-lg text-sm outline-none focus:border-gray-800 transition-all duration-300"
               />
-            </div>
+            </form>
           </div>
           
           {/* Enlaces móviles */}

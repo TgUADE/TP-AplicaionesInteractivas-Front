@@ -1,5 +1,6 @@
 import Navigation from "./components/Layout/Navigation";
 import Footer from "./components/Layout/Footer";
+import ScrollToTop from "./components/ScrollToTop";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { FavoritesProvider } from "./context/FavoritesContext";
 import Home from "./views/Home.jsx";
@@ -14,6 +15,7 @@ import Favorites from "./views/Favorites";
 function App() {
   return (
     <FavoritesProvider>
+      <ScrollToTop />
       <Navigation />
       <Routes>
         <Route path="/" element={<Navigate to="/home" replace />} />

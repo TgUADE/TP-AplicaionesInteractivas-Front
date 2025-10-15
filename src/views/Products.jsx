@@ -34,11 +34,17 @@ const Products = () => {
     }
   };
 
-  // Set initial category from URL parameter
+  // Set initial category and search from URL parameters
   useEffect(() => {
     const categoryFromUrl = searchParams.get("category");
+    const searchFromUrl = searchParams.get("search");
+    
     if (categoryFromUrl) {
       setSelectedCategory(decodeURIComponent(categoryFromUrl));
+    }
+    
+    if (searchFromUrl) {
+      setSearchTerm(decodeURIComponent(searchFromUrl));
     }
   }, [searchParams]);
 
