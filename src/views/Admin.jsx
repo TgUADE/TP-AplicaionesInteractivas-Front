@@ -61,6 +61,22 @@ const Admin = () => {
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
 
+  //Ordenes
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+
+  const [ordersPage, setOrdersPage] = useState(1);
+  const ordersPageSize = 20;
+
+  const ordersTotalPages = Math.max(
+    1,
+    Math.ceil(orders.length / ordersPageSize)
+  );
+  const pagedOrders = useMemo(() => {
+    const start = (ordersPage - 1) * ordersPageSize;
+    return orders.slice(start, start + ordersPageSize);
+  }, [orders, ordersPage]);
+
   const authHeaders = useMemo(
     () => ({
       "Content-Type": "application/json",
@@ -83,6 +99,15 @@ const Admin = () => {
     if (activeTab === "usuarios") fetchUsers();
   }, [activeTab]);
 
+  useEffect(() => {
+    if (activeTab === "ordenes") fetchOrders();
+  }, [activeTab]);
+
+  useEffect(() => {
+    const tp = Math.max(1, Math.ceil(orders.length / ordersPageSize));
+    if (ordersPage > tp) setOrdersPage(tp);
+  }, [orders]);
+
   const fetchUsers = async () => {
     setUsersLoading(true);
     try {
@@ -96,6 +121,20 @@ const Admin = () => {
       alert("Error cargando usuarios");
     } finally {
       setUsersLoading(false);
+    }
+  };
+
+  const fetchOrders = async () => {
+    setOrdersLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/orders`, { headers: authHeaders });
+      const data = await res.json();
+      setOrders(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error(e);
+      alert("Error cargando órdenes");
+    } finally {
+      setOrdersLoading(false);
     }
   };
 
@@ -449,6 +488,17 @@ const Admin = () => {
           >
             Usuarios
           </button>
+
+          <button
+            onClick={() => setActiveTab("ordenes")}
+            className={`w-full text-left px-4 py-2 rounded ${
+              activeTab === "ordenes"
+                ? "bg-black text-white"
+                : "hover:bg-gray-100"
+            }`}
+          >
+            Ordenes
+          </button>
         </nav>
       </aside>
 
@@ -723,6 +773,141 @@ const Admin = () => {
                         </tr>
                       )}
                     </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Ordenes */}
+        {activeTab === "ordenes" && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-semibold">Ordenes</h1>
+                <p className="text-gray-500">Listado de todas las órdenes.</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border">
+              {ordersLoading ? (
+                <div className="p-6">Cargando...</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-left text-sm">
+                    <thead className="border-b bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3">Cliente</th>
+                        <th className="px-4 py-3">Total</th>
+                        <th className="px-4 py-3">Estado</th>
+                        <th className="px-4 py-3">Creada</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagedOrders.map((o) => (
+                        <tr
+                          key={o.id ?? o.orderId}
+                          className="border-b last:border-0"
+                        >
+                          <td className="px-4 py-3">
+                            {o.user?.email ?? o.customerEmail ?? o.email ?? "-"}
+                          </td>
+                          <td className="px-4 py-3">
+                            {o.totalAmount ?? o.total ?? o.amount ?? "-"}
+                          </td>
+                          <td className="px-4 py-3">{o.status ?? "-"}</td>
+                          <td className="px-4 py-3">
+                            {o.createdAt
+                              ? new Date(o.createdAt).toLocaleString()
+                              : o.created_at
+                              ? new Date(o.created_at).toLocaleString()
+                              : "-"}
+                          </td>
+                        </tr>
+                      ))}
+                      {orders.length === 0 && (
+                        <tr>
+                          <td className="px-4 py-6" colSpan={5}>
+                            Sin órdenes
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colSpan={5}>
+                          <div className="flex items-center justify-between p-4 border-t">
+                            <div className="text-sm text-gray-600">
+                              {orders.length > 0 ? (
+                                <>
+                                  Mostrando{" "}
+                                  <span className="font-medium">
+                                    {(ordersPage - 1) * ordersPageSize + 1}
+                                  </span>
+                                  {" - "}
+                                  <span className="font-medium">
+                                    {Math.min(
+                                      orders.length,
+                                      ordersPage * ordersPageSize
+                                    )}
+                                  </span>{" "}
+                                  de{" "}
+                                  <span className="font-medium">
+                                    {orders.length}
+                                  </span>
+                                </>
+                              ) : (
+                                "Sin órdenes"
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                onClick={() =>
+                                  setOrdersPage((p) => Math.max(1, p - 1))
+                                }
+                                disabled={ordersPage === 1}
+                                className="h-9 px-3"
+                              >
+                                Anterior
+                              </Button>
+
+                              {Array.from(
+                                { length: ordersTotalPages },
+                                (_, i) => i + 1
+                              ).map((n) => (
+                                <button
+                                  key={n}
+                                  onClick={() => setOrdersPage(n)}
+                                  className={`h-9 min-w-9 px-3 rounded-md border text-sm ${
+                                    n === ordersPage
+                                      ? "bg-black text-white border-black"
+                                      : "bg-white hover:bg-gray-50"
+                                  }`}
+                                >
+                                  {n}
+                                </button>
+                              ))}
+
+                              <Button
+                                variant="outline"
+                                onClick={() =>
+                                  setOrdersPage((p) =>
+                                    Math.min(ordersTotalPages, p + 1)
+                                  )
+                                }
+                                disabled={ordersPage === ordersTotalPages}
+                                className="h-9 px-3"
+                              >
+                                Siguiente
+                              </Button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
               )}
