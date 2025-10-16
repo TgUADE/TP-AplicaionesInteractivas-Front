@@ -29,8 +29,12 @@ const Profile = () => {
   }, [isLoggedIn, isInitialized, navigate]);
 
   const handleLogout = () => {
-    logout();
+    // Navegar inmediatamente antes de hacer logout para evitar ver el perfil vacío
     navigate("/home");
+    // Logout se ejecuta después de navegar
+    setTimeout(() => {
+      logout();
+    }, 50);
   };
 
   const handleEdit = (e) => {

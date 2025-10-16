@@ -33,8 +33,13 @@ export const useAuth = () => {
   const [token, setToken] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const [isAdmin, setIsAdmin] = useState(false);
+  // Initialize isAdmin from localStorage if available
+  const [isAdmin, setIsAdmin] = useState(() => {
+    const savedIsAdmin = localStorage.getItem("isAdmin");
+    return savedIsAdmin === "true";
+  });
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false); // Para login/logout en progreso
 
   const loadUserAndSetAdmin = async (jwt) => {
     try {
@@ -54,18 +59,24 @@ export const useAuth = () => {
       const hasAdmin =
         payload.isAdmin === true ||
         role === "ADMIN" ||
-        role.includes("ADMIN") ||
+        (typeof role === "string" && role.includes("ADMIN")) ||
         (Array.isArray(authorities) && authorities.includes("ROLE_ADMIN")) ||
         (Array.isArray(authorities) && authorities.includes("ADMIN"));
         
-      setIsAdmin(!!hasAdmin);
-      localStorage.setItem("isAdmin", hasAdmin ? "true" : "false");
-      
-      console.log("🔐 Admin status from JWT:", hasAdmin ? "✓ ADMIN" : "✗ USER");
+      // Si JWT no contiene info de admin, mantener valor actual de localStorage como fallback
+      if (!hasAdmin && (role === "" || role === undefined) && authorities.length === 0) {
+        const savedIsAdmin = localStorage.getItem("isAdmin") === "true";
+        setIsAdmin(savedIsAdmin);
+        // No actualizar localStorage si JWT no tiene info
+      } else {
+        setIsAdmin(!!hasAdmin);
+        localStorage.setItem("isAdmin", hasAdmin ? "true" : "false");
+      }
     } catch (error) {
       console.error("❌ Error parsing JWT for admin status:", error);
-      setIsAdmin(false);
-      localStorage.setItem("isAdmin", "false");
+      // No resetear isAdmin en caso de error, mantener estado actual
+      const savedIsAdmin = localStorage.getItem("isAdmin") === "true";
+      setIsAdmin(savedIsAdmin);
     } finally {
       setIsAuthLoading(false);
     }
@@ -74,11 +85,16 @@ export const useAuth = () => {
   // Listener para sincronizar admin status desde useUserProfile
   useEffect(() => {
     const handleProfileLoaded = (event) => {
-      const { isAdmin: profileIsAdmin } = event.detail || {};
+      const { isAdmin: profileIsAdmin, role, profileData } = event.detail || {};
+      console.log("📡 Profile loaded event received - isAdmin:", profileIsAdmin, "role:", role);
+      
       if (typeof profileIsAdmin === "boolean") {
         console.log("🔄 Syncing admin status from profile:", profileIsAdmin ? "✓ ADMIN" : "✗ USER");
         setIsAdmin(profileIsAdmin);
         localStorage.setItem("isAdmin", profileIsAdmin ? "true" : "false");
+        
+        // Force re-render para que RequireAdmin vea el nuevo estado
+        setIsAuthLoading(false);
       }
     };
 
@@ -107,28 +123,69 @@ export const useAuth = () => {
 
   // Función para hacer login y guardar el token
   const login = async (newToken) => {
-    console.log("🔐 Login: Guardando token:", newToken ? "✓" : "✗");
-    localStorage.setItem("authToken", newToken);
-    setToken(newToken);
-    setIsLoggedIn(true);
-    if (isExpired(newToken)) {
-      logout();
+    try {
+      setIsProcessing(true);
+      console.log("🔐 Login: Guardando token:", newToken ? "✓" : "✗");
+      
+      localStorage.setItem("authToken", newToken);
+      setToken(newToken);
+      setIsLoggedIn(true);
+      
+      if (isExpired(newToken)) {
+        logout();
+        setIsInitialized(true);
+        return;
+      }
+      
+      await loadUserAndSetAdmin(newToken);
       setIsInitialized(true);
-      return;
+      
+      // Disparar evento para que otros hooks carguen datos del nuevo usuario
+      console.log("📡 Disparando evento user_logged_in");
+      window.dispatchEvent(new CustomEvent("user_logged_in", { 
+        detail: { token: newToken } 
+      }));
+      
+      console.log("✅ Login completado - Redirigiendo a /home en 500ms");
+      
+      // Redirigir a home para asegurar que todo el estado se actualice correctamente
+      setTimeout(() => {
+        window.location.href = "/home";
+      }, 500);
+      
+    } catch (error) {
+      console.error("❌ Error en login:", error);
+      setIsProcessing(false);
+      throw error;
     }
-    await loadUserAndSetAdmin(newToken);
-    setIsInitialized(true);
   };
 
   // Función para hacer logout
   const logout = () => {
+    setIsProcessing(true);
+    console.log("🚪 Iniciando logout...");
+    
+    // Limpiar localStorage
     localStorage.removeItem("authToken");
-    localStorage.removeItem("temp_cart"); // Limpiar carrito temporal
+    localStorage.removeItem("temp_cart"); // Limpiar carrito temporal  
     localStorage.removeItem("isAdmin");
+    
+    // Limpiar estados
     setToken(null);
     setIsLoggedIn(false);
     setIsAdmin(false);
     setIsAuthLoading(false);
+    
+    // Disparar evento para que otros hooks se limpien
+    console.log("📡 Disparando evento user_logged_out");
+    window.dispatchEvent(new CustomEvent("user_logged_out"));
+    
+    console.log("✅ Logout completado - Redirigiendo a /home en 100ms");
+    
+    // Redirigir a home después de un breve delay para asegurar limpieza completa
+    setTimeout(() => {
+      window.location.href = "/home";
+    }, 100);
   };
 
   return {
@@ -137,6 +194,7 @@ export const useAuth = () => {
     isAdmin,
     isAuthLoading,
     isInitialized,
+    isProcessing,
     login,
     logout,
   };

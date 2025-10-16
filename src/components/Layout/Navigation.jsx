@@ -194,6 +194,17 @@ const Navigation = () => {
                 Contact Us
               </Link>
             </li>
+            {isAdmin && (
+              <li>
+                <Link 
+                  to="/admin" 
+                  className="block py-3 px-2 text-gray-800 font-medium hover:bg-gray-50 rounded-lg transition-all duration-300"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Admin
+                </Link>
+              </li>
+            )}
           </ul>
         </div>
       </div>

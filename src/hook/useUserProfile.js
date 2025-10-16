@@ -79,14 +79,17 @@ export const useUserProfile = () => {
       }
       
       // Dispatch event to sync admin status with useAuth
-      if (data.role || data.isAdmin) {
-        window.dispatchEvent(new CustomEvent("profile_loaded", { 
-          detail: { 
-            isAdmin: data.isAdmin === true || data.role === "ADMIN",
-            role: data.role 
-          } 
-        }));
-      }
+      const isAdminFromProfile = data.isAdmin === true || data.role === "ADMIN";
+      console.log("🔄 Profile loaded - role:", data.role, "isAdmin:", data.isAdmin);
+      console.log("🔄 Calculated admin from profile:", isAdminFromProfile);
+      
+      window.dispatchEvent(new CustomEvent("profile_loaded", { 
+        detail: { 
+          isAdmin: isAdminFromProfile,
+          role: data.role,
+          profileData: data
+        } 
+      }));
     } catch (err) {
       console.error("❌ Error fetching profile:", err);
       setError(err.message);
@@ -208,7 +211,7 @@ export const useUserProfile = () => {
     };
 
     loadProfile();
-  }, [authInitialized, isLoggedIn, token]);
+  }, [authInitialized, isLoggedIn, token, fetchProfile]);
 
   // Listener para eventos de login/logout
   useEffect(() => {

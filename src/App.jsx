@@ -3,6 +3,7 @@ import Footer from "./components/Layout/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { FavoritesProvider } from "./context/FavoritesContext";
+import { useUserProfile } from "./hook/useUserProfile";
 import Home from "./views/Home.jsx";
 import Products from "./views/Products";
 import ProductDetail from "./views/ProductDetail";
@@ -15,6 +16,10 @@ import RequireAdmin from "./components/RouteGuards/RequireAdmin";
 import Admin from "./views/Admin";
 
 function App() {
+  // Ejecutar useUserProfile a nivel de app para que siempre cargue el perfil
+  // y dispare el evento profile_loaded que sincroniza isAdmin automáticamente
+  useUserProfile();
+  
   return (
     <FavoritesProvider>
       <ScrollToTop />

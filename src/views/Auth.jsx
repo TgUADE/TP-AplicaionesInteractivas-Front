@@ -32,10 +32,10 @@ const Auth = () => {
 
       if (response.ok) {
         // Usar el hook para guardar el token en localStorage
+        // login() automáticamente recarga la página después de 500ms
         await login(data.access_token);
-
-        const redirctTo = location.state?.from?.pathname || "/home";
-        navigate(redirctTo, { replace: true });
+        
+        // La navegación ya no es necesaria - login() recarga la página automáticamente
       } else {
         alert("Login failed: " + (data.message || "Unknown error"));
       }

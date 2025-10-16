@@ -14,7 +14,6 @@ const RequireAdmin = ({ children }) => {
   if (!isAdmin) {
     return <Navigate to="/home" replace />;
   }
-
   return children;
 };
 
