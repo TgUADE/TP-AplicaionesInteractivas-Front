@@ -4,7 +4,7 @@ import Button from "../components/UI/Button";
 import LockIcon from "../icons/LockIcon";
 import MailIcon from "../icons/MailIcon";
 import { useAuth } from "../hook/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -14,14 +14,12 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true); // true for login, false for register
   const { login, isLoggedIn, token } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    
-
     try {
-      
       const response = await fetch("/api/v1/auth/login", {
         method: "POST",
         headers: {
@@ -30,36 +28,24 @@ const Auth = () => {
         body: JSON.stringify({ email, password }),
       });
 
-      
-
       const data = await response.json();
-      
 
       if (response.ok) {
-        
-
         // Usar el hook para guardar el token en localStorage
         login(data.access_token);
 
-        // Redirigir al home después del login exitoso
-        navigate("/home");
-        
+        const redirctTo = location.state?.from?.pathname || "/home";
+        navigate(redirctTo, { replace: true });
       } else {
-        
         alert("Login failed: " + (data.message || "Unknown error"));
       }
     } catch (error) {
-      
       alert("Network error: " + error.message);
     }
-
-    
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
-
-    
 
     try {
       console.log("Making POST request to register API...");
@@ -71,16 +57,12 @@ const Auth = () => {
         body: JSON.stringify({ name, surname, email, password }),
       });
 
-      
       const data = await response.json();
-     
 
       if (response.ok) {
-       
         alert("Registration successful! You can now login.");
         setIsLogin(true); // Switch to login mode after successful registration
       } else {
-        
         // Show detailed validation errors if available
         if (data.errors && Array.isArray(data.errors)) {
           const errorMessages = data.errors
@@ -95,11 +77,8 @@ const Auth = () => {
         }
       }
     } catch (error) {
-      
       alert("Network error: " + error.message);
     }
-
-    
   };
 
   return (
@@ -107,7 +86,9 @@ const Auth = () => {
       {/* Header */}
       <div className="w-full max-w-md">
         <h1 className="text-4xl font-semibold text-black mb-16 text-left">
-          {isLogin ? "Sign In for checkout & other features." : "Create Account"}
+          {isLogin
+            ? "Sign In for checkout & other features."
+            : "Create Account"}
         </h1>
       </div>
 
@@ -204,7 +185,6 @@ const Auth = () => {
             </button>
           </p>
         </div>
-
       </div>
     </div>
   );

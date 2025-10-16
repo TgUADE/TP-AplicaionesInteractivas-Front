@@ -6,6 +6,7 @@ import HeartIcon from "../../icons/HeartIcon";
 import SearchIcon from "../../icons/SearchIcon";
 import { useCart } from "../../hook/useCart";
 import { useFavoritesContext } from "../../context/FavoritesContext";
+import { useAuth } from "../../hook/useAuth";
 
 const Navigation = () => {
   const location = useLocation();
@@ -14,6 +15,8 @@ const Navigation = () => {
   const { favorites } = useFavoritesContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const {isAdmin} = useAuth();
 
   const navLinkClass = (path) => 
     `text-gray-800 no-underline font-medium text-base transition-all duration-300 py-2 relative ${
@@ -87,6 +90,13 @@ const Navigation = () => {
               Contact Us
             </Link>
           </li>
+          {isAdmin && (
+            <li className="flex items-center">
+              <Link to="/admin" className={navLinkClass("/admin")}>
+                Admin
+              </Link>
+            </li>
+          )}
         </ul>
 
         {/* Iconos - siempre visibles pero adaptados */}

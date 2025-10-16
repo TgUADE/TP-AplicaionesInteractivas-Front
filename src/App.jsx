@@ -11,6 +11,8 @@ import Auth from "./views/Auth";
 import Profile from "./views/Profile";
 import Cart from "./views/Cart";
 import Favorites from "./views/Favorites";
+import RequireAdmin from "./components/RouteGuards/RequireAdmin";
+import Admin from "./views/Admin";
 
 function App() {
   return (
@@ -27,6 +29,7 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/favorites" element={<Favorites />} />
+        <Route path="/admin" element={<RequireAdmin><Admin /></RequireAdmin>} />
       </Routes>
       <Footer />
     </FavoritesProvider>
