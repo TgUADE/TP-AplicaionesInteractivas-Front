@@ -46,28 +46,45 @@ export const useAuth = () => {
         return;
       }
 
-      // Use relative path to go through Vite proxy and avoid CORS
-      const res = await fetch(`/api/users/${sub}`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${jwt}` },
-      });
-      const user = await res.json();
-
+      // Extract admin info directly from JWT to avoid duplicate HTTP calls
+      const payload = parseJwt(jwt) || {};
+      const authorities = payload.authorities || payload.roles || [];
+      const role = payload.role || payload.scope || "";
+      
       const hasAdmin =
-        user.isAdmin === true ||
-        user.role === "ADMIN" ||
-        (Array.isArray(user.authorities) &&
-          user.authorities.includes("ROLE_ADMIN")) ||
-        (Array.isArray(user.roles) && user.roles.includes("ADMIN"));
+        payload.isAdmin === true ||
+        role === "ADMIN" ||
+        role.includes("ADMIN") ||
+        (Array.isArray(authorities) && authorities.includes("ROLE_ADMIN")) ||
+        (Array.isArray(authorities) && authorities.includes("ADMIN"));
+        
       setIsAdmin(!!hasAdmin);
       localStorage.setItem("isAdmin", hasAdmin ? "true" : "false");
-    } catch {
+      
+      console.log("🔐 Admin status from JWT:", hasAdmin ? "✓ ADMIN" : "✗ USER");
+    } catch (error) {
+      console.error("❌ Error parsing JWT for admin status:", error);
       setIsAdmin(false);
       localStorage.setItem("isAdmin", "false");
     } finally {
       setIsAuthLoading(false);
     }
   };
+
+  // Listener para sincronizar admin status desde useUserProfile
+  useEffect(() => {
+    const handleProfileLoaded = (event) => {
+      const { isAdmin: profileIsAdmin } = event.detail || {};
+      if (typeof profileIsAdmin === "boolean") {
+        console.log("🔄 Syncing admin status from profile:", profileIsAdmin ? "✓ ADMIN" : "✗ USER");
+        setIsAdmin(profileIsAdmin);
+        localStorage.setItem("isAdmin", profileIsAdmin ? "true" : "false");
+      }
+    };
+
+    window.addEventListener("profile_loaded", handleProfileLoaded);
+    return () => window.removeEventListener("profile_loaded", handleProfileLoaded);
+  }, []);
 
   // Verificar si hay un token en localStorage al cargar
   useEffect(() => {

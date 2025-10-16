@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./useAuth";
 
 const API_BASE_URL = "/api";
@@ -8,7 +8,9 @@ export const useUserProfile = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [userId, setUserId] = useState(null);
-  const { token, isLoggedIn } = useAuth();
+  const [isInitialized, setIsInitialized] = useState(false);
+  const { token, isLoggedIn, isInitialized: authInitialized } = useAuth();
+  const hasLoadedRef = useRef(false);
 
   // Decode JWT to get user ID (for updates and deletes)
   useEffect(() => {
@@ -27,8 +29,10 @@ export const useUserProfile = () => {
   }, [token]);
 
   // Fetch user profile using /me endpoint
-  const fetchProfile = useCallback(async () => {
-    if (!isLoggedIn || !token) {
+  const fetchProfile = useCallback(async (authToken = null) => {
+    const currentToken = authToken || token;
+    
+    if (!currentToken) {
       setProfile(null);
       setIsLoading(false);
       return;
@@ -41,13 +45,13 @@ export const useUserProfile = () => {
       const url = `${API_BASE_URL}/users/me`;
       console.log("🔄 Fetching user profile from /me endpoint...");
       console.log("📍 Full URL:", url);
-      console.log("🔑 Token present:", !!token);
+      console.log("🔑 Token present:", !!currentToken);
       
       const response = await fetch(url, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${currentToken}`,
         },
       });
 
@@ -73,6 +77,16 @@ export const useUserProfile = () => {
       if (data.id) {
         setUserId(data.id);
       }
+      
+      // Dispatch event to sync admin status with useAuth
+      if (data.role || data.isAdmin) {
+        window.dispatchEvent(new CustomEvent("profile_loaded", { 
+          detail: { 
+            isAdmin: data.isAdmin === true || data.role === "ADMIN",
+            role: data.role 
+          } 
+        }));
+      }
     } catch (err) {
       console.error("❌ Error fetching profile:", err);
       setError(err.message);
@@ -80,7 +94,7 @@ export const useUserProfile = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoggedIn, token]);
+  }, [token]);
 
   // Update user profile
   const updateProfile = useCallback(async (updatedData) => {
@@ -164,20 +178,86 @@ export const useUserProfile = () => {
     }
   }, [isLoggedIn, token, profile]);
 
-  // Load profile on mount and when auth changes
+  // Load profile when auth initializes
   useEffect(() => {
-    if (isLoggedIn && token) {
-      fetchProfile();
-    } else {
-      setProfile(null);
-      setIsLoading(false);
+    // Esperar a que la autenticación esté inicializada
+    if (!authInitialized) {
+      return;
     }
-  }, [isLoggedIn, token, fetchProfile]);
+
+    // Evitar cargar múltiples veces
+    if (hasLoadedRef.current && isInitialized) {
+      console.log("useUserProfile ya inicializado, usando cache");
+      return;
+    }
+
+    console.log("🔄 useUserProfile: Inicializando - isLoggedIn:", isLoggedIn, "token:", token ? "✓" : "✗");
+    
+    const loadProfile = async () => {
+      if (isLoggedIn && token) {
+        console.log("✅ Usuario autenticado, cargando perfil...");
+        await fetchProfile();
+      } else {
+        console.log("❌ Sin autenticación, limpiando perfil");
+        setProfile(null);
+        setIsLoading(false);
+      }
+      
+      setIsInitialized(true);
+      hasLoadedRef.current = true;
+    };
+
+    loadProfile();
+  }, [authInitialized, isLoggedIn, token]);
+
+  // Listener para eventos de login/logout
+  useEffect(() => {
+    const handleLogout = () => {
+      console.log("🚪 Evento LOGOUT recibido en useUserProfile");
+      setProfile(null);
+      setError(null);
+      setUserId(null);
+      hasLoadedRef.current = false;
+      setIsInitialized(false);
+      setIsLoading(false);
+    };
+    
+    const handleLogin = async (event) => {
+      console.log("🔐 Evento LOGIN recibido en useUserProfile");
+      const newToken = event.detail?.token;
+      
+      if (newToken && !isLoading) {
+        console.log("👤 Token recibido del evento, cargando perfil...");
+        
+        // Reset el flag para permitir la carga
+        hasLoadedRef.current = false;
+        setIsInitialized(false);
+        
+        try {
+          await fetchProfile(newToken);
+          hasLoadedRef.current = true;
+          setIsInitialized(true);
+          console.log("✅ Perfil cargado desde evento login");
+        } catch (error) {
+          console.error("Error cargando perfil tras login:", error);
+        }
+      }
+    };
+    
+    window.addEventListener("user_logged_out", handleLogout);
+    window.addEventListener("user_logged_in", handleLogin);
+    
+    return () => {
+      window.removeEventListener("user_logged_out", handleLogout);
+      window.removeEventListener("user_logged_in", handleLogin);
+    };
+  }, [isLoading]); // Incluir isLoading para evitar llamadas concurrentes
 
   return {
     profile,
     isLoading,
     error,
+    isInitialized,
     fetchProfile,
     updateProfile,
     deleteAccount,

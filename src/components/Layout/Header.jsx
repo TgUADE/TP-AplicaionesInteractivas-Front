@@ -63,7 +63,7 @@ const Header = () => {
 
         <div className="flex gap-6 items-center lg:gap-5">
           <Link
-            to="/wishlist"
+            to="/favorites"
             className="text-2xl no-underline transition-all duration-300 p-2 rounded-full hover:bg-gray-50 hover:scale-110"
           >
             <HeartIcon />

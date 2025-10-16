@@ -10,7 +10,7 @@ import MailIcon from "../icons/MailIcon";
 
 const Profile = () => {
   const { isLoggedIn, logout, isInitialized } = useAuth();
-  const { profile, isLoading, error, updateProfile, deleteAccount } = useUserProfile();
+  const { profile, isLoading, error, isInitialized: profileInitialized, updateProfile, deleteAccount } = useUserProfile();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState({});
@@ -76,7 +76,8 @@ const Profile = () => {
     setEditedData((prev) => ({ ...prev, [field]: value }));
   };
 
-  if (!isInitialized || isLoading) {
+  // Show loading while auth is initializing OR profile is loading/initializing
+  if (!isInitialized || !profileInitialized || (isLoading && !profile)) {
     return (
       <div className="min-h-screen bg-white w-full flex items-center justify-center">
         <LoadingSpinner size="large" text="Loading profile..." />
@@ -86,6 +87,25 @@ const Profile = () => {
 
   if (!isLoggedIn) {
     return null;
+  }
+
+  // Handle profile error
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white w-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Error loading profile</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
+          >
+            Reload Page
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

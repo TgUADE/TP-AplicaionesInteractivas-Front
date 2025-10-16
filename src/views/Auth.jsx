@@ -32,7 +32,7 @@ const Auth = () => {
 
       if (response.ok) {
         // Usar el hook para guardar el token en localStorage
-        login(data.access_token);
+        await login(data.access_token);
 
         const redirctTo = location.state?.from?.pathname || "/home";
         navigate(redirctTo, { replace: true });
