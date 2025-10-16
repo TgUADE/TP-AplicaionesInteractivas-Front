@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./useAuth";
 
 const API_BASE_URL = "/api";
@@ -20,7 +20,9 @@ export const useCart = () => {
   const [error, setError] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isGettingCart, setIsGettingCart] = useState(false);
-  const { token, isLoggedIn } = useAuth();
+  const [isInitialized, setIsInitialized] = useState(false);
+  const { token, isLoggedIn, isInitialized: authInitialized } = useAuth();
+  const hasLoadedRef = useRef(false);
 
   const headers = {
     "Content-Type": "application/json",
@@ -507,7 +509,18 @@ export const useCart = () => {
 
   // Cargar carrito cuando cambia el estado de autenticación
   useEffect(() => {
-    console.log("🔄 useCart: Estado cambió - isLoggedIn:", isLoggedIn, "token:", token ? "✓" : "✗");
+    // Esperar a que la autenticación esté inicializada
+    if (!authInitialized) {
+      return;
+    }
+
+    // Evitar cargar múltiples veces
+    if (hasLoadedRef.current && isInitialized) {
+      console.log("⚡ useCart ya inicializado, usando cache");
+      return;
+    }
+
+    console.log("🔄 useCart: Inicializando - isLoggedIn:", isLoggedIn, "token:", token ? "✓" : "✗");
 
     const loadCart = async () => {
       if (isLoggedIn && token) {
@@ -520,10 +533,13 @@ export const useCart = () => {
         const localItems = loadLocalCart();
         setCartItems(localItems);
       }
+      
+      setIsInitialized(true);
+      hasLoadedRef.current = true;
     };
 
     loadCart();
-  }, [isLoggedIn, token]);
+  }, [authInitialized, isLoggedIn, token]);
 
   // Listener para eventos de actualización del carrito
   useEffect(() => {
@@ -540,20 +556,106 @@ export const useCart = () => {
   // Listener para eventos de login/logout
   useEffect(() => {
     const handleLogout = () => {
-      console.log("🚪 Evento LOGOUT recibido");
+      console.log("🚪 Evento LOGOUT recibido en useCart");
       setCart(null);
       setCartItems([]);
       setError(null);
       clearLocalCart();
+      hasLoadedRef.current = false;
+      setIsInitialized(false);
     };
     
-    const handleLogin = async () => {
-      console.log("🔐 Evento LOGIN recibido");
-      // Esperar un momento para que el token se haya guardado
-      await new Promise(resolve => setTimeout(resolve, 200));
-      if (token && !isLoading && !isGettingCart) {
-        console.log("📦 Cargando carrito tras login...");
-        await getCart();
+    const handleLogin = async (event) => {
+      console.log("🔐 Evento LOGIN recibido en useCart");
+      const newToken = event.detail?.token;
+      
+      if (newToken && !isGettingCart) {
+        console.log("📦 Token recibido del evento, cargando carrito...");
+        
+        // Reset el flag para permitir la carga
+        hasLoadedRef.current = false;
+        
+        // Cargar items locales primero
+        const localItems = loadLocalCart();
+        console.log("Items locales encontrados:", localItems.length);
+        
+        try {
+          setIsLoading(true);
+          setIsGettingCart(true);
+          
+          // Obtener carrito del backend con el token del evento
+          const headersWithToken = {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${newToken}`,
+          };
+          
+          const response = await fetch(`${API_BASE_URL}/carts/my-carts`, {
+            method: "GET",
+            headers: headersWithToken,
+          });
+
+          if (response.status === 404) {
+            console.log("No hay carrito, creando uno nuevo...");
+            
+            // Crear carrito
+            const createResponse = await fetch(`${API_BASE_URL}/carts`, {
+              method: "POST",
+              headers: headersWithToken,
+              body: JSON.stringify({ productIds: [] }),
+            });
+            
+            if (createResponse.ok) {
+              const newCart = await createResponse.json();
+              setCart(newCart);
+              
+              // Sincronizar items locales si hay
+              if (localItems.length > 0) {
+                console.log("Sincronizando items locales al nuevo carrito...");
+                await syncLocalItemsToCart(newCart, localItems);
+              }
+              
+              // Recargar carrito después de sincronizar
+              setIsGettingCart(false);
+              await getCart();
+            }
+          } else if (response.ok) {
+            const cartData = await response.json();
+            const userCart = Array.isArray(cartData) ? cartData[0] : cartData;
+            
+            if (userCart) {
+              setCart(userCart);
+              
+              const items = (userCart.cartProducts || [])
+                .map((product) => ({
+                  productId: product?.product?.id,
+                  quantity: product.quantity,
+                  name: product?.product?.name,
+                  price: product?.product?.price,
+                }))
+                .filter((item) => item.productId !== null);
+              
+              setCartItems(items);
+              console.log("✅ Carrito cargado desde login:", items.length, "items");
+              
+              // Sincronizar items locales si hay
+              if (localItems.length > 0) {
+                console.log("Sincronizando items locales al carrito existente...");
+                await syncLocalItemsToCart(userCart, localItems);
+                // Recargar después de sincronizar
+                setIsGettingCart(false);
+                await getCart();
+              }
+            }
+          }
+          
+          hasLoadedRef.current = true;
+          broadcastCartUpdated();
+        } catch (error) {
+          console.error("Error cargando carrito tras login:", error);
+        } finally {
+          setIsLoading(false);
+          setIsGettingCart(false);
+        }
       }
     };
     
@@ -564,13 +666,14 @@ export const useCart = () => {
       window.removeEventListener("user_logged_out", handleLogout);
       window.removeEventListener("user_logged_in", handleLogin);
     };
-  }, [token, isLoading, isGettingCart]);
+  }, [isGettingCart]); // Incluir isGettingCart para evitar llamadas concurrentes
 
   return {
     cart,
     cartItems,
     isLoading,
     error,
+    isInitialized,
     createCart,
     getCart,
     addToCart,

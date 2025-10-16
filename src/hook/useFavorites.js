@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useAuth } from "./useAuth";
 
 const API_BASE_URL = "/api";
@@ -7,7 +7,9 @@ export const useFavorites = () => {
   const [favorites, setFavorites] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { token, isLoggedIn } = useAuth();
+  const [isInitialized, setIsInitialized] = useState(false);
+  const { token, isLoggedIn, isInitialized: authInitialized } = useAuth();
+  const hasLoadedRef = useRef(false);
   
   const headers = useMemo(() => ({
     "Content-Type": "application/json",
@@ -194,7 +196,18 @@ export const useFavorites = () => {
 
   // Cargar favoritos cuando cambia el estado de autenticación
   useEffect(() => {
-    console.log("🔄 useFavorites: Estado cambió - isLoggedIn:", isLoggedIn, "token:", token ? "✓" : "✗");
+    // Esperar a que la autenticación esté inicializada
+    if (!authInitialized) {
+      return;
+    }
+
+    // Evitar cargar múltiples veces
+    if (hasLoadedRef.current && isInitialized) {
+      console.log("useFavorites ya inicializado, usando cache");
+      return;
+    }
+
+    console.log("🔄 useFavorites: Inicializando - isLoggedIn:", isLoggedIn, "token:", token ? "✓" : "✗");
     
     const loadFavorites = async () => {
       if (isLoggedIn && token) {
@@ -204,26 +217,61 @@ export const useFavorites = () => {
         console.log("❌ Sin autenticación, limpiando favoritos");
         setFavorites([]);
       }
+      
+      setIsInitialized(true);
+      hasLoadedRef.current = true;
     };
 
     loadFavorites();
-  }, [isLoggedIn, token]);
+  }, [authInitialized, isLoggedIn, token, fetchFavorites]);
 
   // Listener para eventos de login/logout
   useEffect(() => {
     const handleLogout = () => {
-      console.log("🚪 Evento LOGOUT recibido");
+      console.log("🚪 Evento LOGOUT recibido en useFavorites");
       setFavorites([]);
       setError(null);
+      hasLoadedRef.current = false;
+      setIsInitialized(false);
     };
     
-    const handleLogin = async () => {
-      console.log("🔐 Evento LOGIN recibido");
-      // Esperar un momento para que el token se haya guardado
-      await new Promise(resolve => setTimeout(resolve, 200));
-      if (token && !isLoading) {
-        console.log("❤️ Cargando favoritos tras login...");
-        await fetchFavorites();
+    const handleLogin = async (event) => {
+      console.log("🔐 Evento LOGIN recibido en useFavorites");
+      const newToken = event.detail?.token;
+      
+      if (newToken && !isLoading) {
+        console.log("❤️ Token recibido del evento, cargando favoritos...");
+        
+        // Reset el flag para permitir la carga
+        hasLoadedRef.current = false;
+        
+        // Usar el token del evento directamente para hacer el fetch
+        try {
+          setIsLoading(true);
+          
+          const response = await fetch(`${API_BASE_URL}/favorites/my-favorites`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${newToken}`,
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            setFavorites(Array.isArray(data) ? data : []);
+            console.log("✅ Favoritos cargados desde login:", data.length);
+          } else if (response.status === 404) {
+            setFavorites([]);
+            console.log("✅ Sin favoritos guardados");
+          }
+          
+          hasLoadedRef.current = true;
+        } catch (error) {
+          console.error("Error cargando favoritos tras login:", error);
+        } finally {
+          setIsLoading(false);
+        }
       }
     };
     
@@ -234,12 +282,13 @@ export const useFavorites = () => {
       window.removeEventListener("user_logged_out", handleLogout);
       window.removeEventListener("user_logged_in", handleLogin);
     };
-  }, [token, isLoading]);
+  }, [isLoading]); // Incluir isLoading para evitar llamadas concurrentes
 
   return {
     favorites,
     isLoading,
     error,
+    isInitialized,
     addToFavorites,
     removeFromFavorites,
     toggleFavorite,

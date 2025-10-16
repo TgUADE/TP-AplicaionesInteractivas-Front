@@ -75,11 +75,14 @@ export const useAuth = () => {
     if (savedToken) {
       if (isExpired(savedToken)) {
         logout();
+        setIsInitialized(true);
         return;
       }
       setToken(savedToken);
       setIsLoggedIn(true);
-      loadUserAndSetAdmin(savedToken);
+      loadUserAndSetAdmin(savedToken).finally(() => {
+        setIsInitialized(true);
+      });
     } else {
       setIsInitialized(true);
     }
@@ -93,9 +96,11 @@ export const useAuth = () => {
     setIsLoggedIn(true);
     if (isExpired(newToken)) {
       logout();
+      setIsInitialized(true);
       return;
     }
     await loadUserAndSetAdmin(newToken);
+    setIsInitialized(true);
   };
 
   // Función para hacer logout
@@ -114,6 +119,7 @@ export const useAuth = () => {
     token,
     isAdmin,
     isAuthLoading,
+    isInitialized,
     login,
     logout,
   };
