@@ -48,6 +48,25 @@ const Admin = () => {
 
   const [isEditOpen, setIsEditOpen] = useState(false);
 
+  //Promociones
+  const [promotions, setPromotions] = useState([]);
+  const [promotionsLoading, setPromotionsLoading] = useState(false);
+  const emptyPromotion = {
+    id: null,
+    name: "",
+    description: "",
+    type: "PERCENTAGE",
+    value: "",
+    start_date: "",
+    end_date: "",
+    product_id: "",
+    active: true,
+  };
+  const [promotionForm, setPromotionForm] = useState(emptyPromotion);
+  const [isPromotionCreateOpen, setIsPromotionCreateOpen] = useState(false);
+  const [isPromotionEditOpen, setIsPromotionEditOpen] = useState(false);
+  const [savingPromotion, setSavingPromotion] = useState(false);
+
   //Categorias
   const [isCategoryCreateOpen, setIsCategoryCreateOpen] = useState(false);
   const [isCategoryEditOpen, setIsCategoryEditOpen] = useState(false);
@@ -108,6 +127,16 @@ const Admin = () => {
     if (ordersPage > tp) setOrdersPage(tp);
   }, [orders]);
 
+  // Al entrar a la pestaña promociones, cargar
+  useEffect(() => {
+    if (activeTab === "promociones") fetchPromotions();
+  }, [activeTab]);
+
+  useEffect(() => {
+    const tp = Math.max(1, Math.ceil(products.length / pageSize));
+    if (currentPage > tp) setCurrentPage(tp);
+  }, [products]);
+
   const fetchUsers = async () => {
     setUsersLoading(true);
     try {
@@ -135,6 +164,26 @@ const Admin = () => {
       alert("Error cargando órdenes");
     } finally {
       setOrdersLoading(false);
+    }
+  };
+
+  // Fechas backend: agrega :00 si falta segundos
+  const toBackendDate = (s) => (s ? (s.length === 16 ? `${s}:00` : s) : "");
+
+  // Fetch
+  const fetchPromotions = async () => {
+    setPromotionsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/promotions`, {
+        headers: authHeaders,
+      });
+      const data = await res.json();
+      setPromotions(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error(e);
+      alert("Error cargando promociones");
+    } finally {
+      setPromotionsLoading(false);
     }
   };
 
@@ -444,10 +493,136 @@ const Admin = () => {
     }
   };
 
-  useEffect(() => {
-    const tp = Math.max(1, Math.ceil(products.length / pageSize));
-    if (currentPage > tp) setCurrentPage(tp);
-  }, [products]);
+  const openCreatePromotion = () => {
+    setPromotionForm(emptyPromotion);
+    setIsPromotionCreateOpen(true);
+    if (products.length === 0) fetchAll(); // para el selector de productos
+  };
+
+  const savePromotion = async () => {
+    try {
+      const body = {
+        name: promotionForm.name,
+        description: promotionForm.description,
+        type: promotionForm.type,
+        value: Number(promotionForm.value),
+        start_date: toBackendDate(promotionForm.start_date),
+        end_date: toBackendDate(promotionForm.end_date),
+        product_id: promotionForm.product_id,
+        active: promotionForm.active ?? true,
+      };
+      setSavingPromotion(true);
+      const res = await fetch(`${API_BASE}/promotions`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify(body),
+      });
+      if (!res.ok)
+        throw new Error((await res.text()) || "Error creando promoción");
+      setIsPromotionCreateOpen(false);
+      window.dispatchEvent(new Event("promotions_updated"));
+    } catch (e) {
+      console.error(e);
+      alert(e.message);
+    } finally {
+      setSavingPromotion(false);
+    }
+  };
+
+  // Editar
+  const openEditPromotion = (p) => {
+    setPromotionForm({
+      id: p.id,
+      name: p.name ?? "",
+      description: p.description ?? "",
+      type: p.type ?? "PERCENTAGE",
+      value: p.value ?? "",
+      start_date: (p.start_date || "").slice(0, 19), // si viene con segundos/zone
+      end_date: (p.end_date || "").slice(0, 19),
+      product_id: p.product_id ?? p.product?.id ?? "",
+      active: !!p.active,
+    });
+    setIsPromotionEditOpen(true);
+    if (products.length === 0) fetchAll();
+  };
+
+  const updatePromotion = async () => {
+    try {
+      if (!promotionForm.id) return alert("Promoción inválida");
+      const body = {
+        name: promotionForm.name,
+        description: promotionForm.description,
+        type: promotionForm.type,
+        value: Number(promotionForm.value),
+        start_date: toBackendDate(promotionForm.start_date),
+        end_date: toBackendDate(promotionForm.end_date),
+        product_id: promotionForm.product_id,
+        active: promotionForm.active ?? true,
+      };
+      setSavingPromotion(true);
+      const res = await fetch(`${API_BASE}/promotions/${promotionForm.id}`, {
+        method: "PUT",
+        headers: authHeaders,
+        body: JSON.stringify(body),
+      });
+      if (!res.ok)
+        throw new Error((await res.text()) || "Error actualizando promoción");
+      setIsPromotionEditOpen(false);
+      window.dispatchEvent(new Event("promotions_updated"));
+    } catch (e) {
+      console.error(e);
+      alert(e.message);
+    } finally {
+      setSavingPromotion(false);
+    }
+  };
+
+  // Eliminar
+  const deletePromotion = async (id) => {
+    if (!confirm("¿Eliminar promoción?")) return;
+    try {
+      const res = await fetch(`${API_BASE}/promotions/${id}`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
+      if (!res.ok)
+        throw new Error((await res.text()) || "Error eliminando promoción");
+      window.dispatchEvent(new Event("promotions_updated"));
+    } catch (e) {
+      console.error(e);
+      alert(e.message);
+    }
+  };
+
+  // Activar/Desactivar
+  const activatePromotion = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE}/promotions/${id}/activate`, {
+        method: "PUT",
+        headers: authHeaders,
+      });
+      if (!res.ok)
+        throw new Error((await res.text()) || "Error activando promoción");
+      window.dispatchEvent(new Event("promotions_updated"));
+    } catch (e) {
+      console.error(e);
+      alert(e.message);
+    }
+  };
+  const deactivatePromotion = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE}/promotions/${id}/deactivate`, {
+        method: "PUT",
+        headers: authHeaders,
+      });
+      if (!res.ok)
+        throw new Error((await res.text()) || "Error desactivando promoción");
+      window.dispatchEvent(new Event("promotions_updated"));
+    } catch (e) {
+      console.error(e);
+      alert(e.message);
+    }
+  };
 
   return (
     <div className="min-h-screen flex bg-white">
@@ -466,6 +641,16 @@ const Admin = () => {
             }`}
           >
             Productos
+          </button>
+          <button
+            onClick={() => setActiveTab("promociones")}
+            className={`w-full text-left px-4 py-2 rounded ${
+              activeTab === "promociones"
+                ? "bg-black text-white"
+                : "hover:bg-gray-100"
+            }`}
+          >
+            Promociones
           </button>
           <button
             onClick={() => setActiveTab("categorias")}
@@ -647,6 +832,119 @@ const Admin = () => {
                         </td>
                       </tr>
                     </tfoot>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Promociones */}
+        {activeTab === "promociones" && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-semibold">Promociones</h1>
+                <p className="text-gray-500">Administra tus promociones.</p>
+              </div>
+              <Button
+                onClick={openCreatePromotion}
+                className="bg-black text-white rounded-full px-6 h-10"
+              >
+                Nueva promoción
+              </Button>
+            </div>
+
+            <div className="bg-white rounded-2xl border">
+              {promotionsLoading ? (
+                <div className="p-6">Cargando...</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-left text-sm">
+                    <thead className="border-b bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3">Nombre</th>
+                        <th className="px-4 py-3">Tipo</th>
+                        <th className="px-4 py-3">Valor</th>
+                        <th className="px-4 py-3">Producto</th>
+                        <th className="px-4 py-3">Inicio</th>
+                        <th className="px-4 py-3">Fin</th>
+                        <th className="px-4 py-3">Activa</th>
+                        <th className="px-4 py-3"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {promotions.map((pr) => (
+                        <tr key={pr.id} className="border-b last:border-0">
+                          <td className="px-4 py-3">{pr.name}</td>
+                          <td className="px-4 py-3">{pr.type}</td>
+                          <td className="px-4 py-3">{pr.value}</td>
+                          <td className="px-4 py-3">
+                            {pr.product_name ??
+                              pr.product?.name ??
+                              pr.product_id ??
+                              "-"}
+                          </td>
+                          <td className="px-4 py-3">
+                            {pr.start_date
+                              ? new Date(pr.start_date).toLocaleString()
+                              : "-"}
+                          </td>
+                          <td className="px-4 py-3">
+                            {pr.end_date
+                              ? new Date(pr.end_date).toLocaleString()
+                              : "-"}
+                          </td>
+                          <td className="px-4 py-3">
+                            {pr.active ? (
+                              <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Sí
+                              </span>
+                            ) : (
+                              <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                No
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 space-x-2">
+                            <Button
+                              onClick={() => openEditPromotion(pr)}
+                              className="h-9 px-4 rounded-full border"
+                            >
+                              Editar
+                            </Button>
+                            {pr.active ? (
+                              <Button
+                                onClick={() => deactivatePromotion(pr.id)}
+                                className="h-9 px-4 rounded-full border"
+                              >
+                                Desactivar
+                              </Button>
+                            ) : (
+                              <Button
+                                onClick={() => activatePromotion(pr.id)}
+                                className="h-9 px-4 rounded-full border"
+                              >
+                                Activar
+                              </Button>
+                            )}
+                            <Button
+                              onClick={() => deletePromotion(pr.id)}
+                              className="h-9 px-4 rounded-full border bg-red-600 text-white"
+                            >
+                              Eliminar
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                      {promotions.length === 0 && (
+                        <tr>
+                          <td className="px-4 py-6" colSpan={8}>
+                            Sin promociones
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
                   </table>
                 </div>
               )}
@@ -1332,6 +1630,318 @@ const Admin = () => {
                 disabled={savingCategory}
               >
                 {savingCategory ? "Guardando..." : "Guardar cambios"}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Promociones */}
+        <Modal
+          isOpen={isPromotionCreateOpen}
+          onClose={() => setIsPromotionCreateOpen(false)}
+          title="Nueva promoción"
+          size="large"
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm mb-1">Nombre</label>
+              <Input
+                type="text"
+                value={promotionForm.name}
+                onChange={(e) =>
+                  setPromotionForm({ ...promotionForm, name: e.target.value })
+                }
+                className="h-10 rounded-md"
+                placeholder="Black Friday"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm mb-1">Descripción</label>
+              <Input
+                type="text"
+                value={promotionForm.description}
+                onChange={(e) =>
+                  setPromotionForm({
+                    ...promotionForm,
+                    description: e.target.value,
+                  })
+                }
+                className="h-10 rounded-md"
+                placeholder="Descuento especial"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm mb-1">Tipo</label>
+                <select
+                  className="border rounded-md h-10 px-3 w-full"
+                  value={promotionForm.type}
+                  onChange={(e) =>
+                    setPromotionForm({ ...promotionForm, type: e.target.value })
+                  }
+                >
+                  <option value="PERCENTAGE">PERCENTAGE</option>
+                  <option value="FIXED_AMOUNT">FIXED_AMOUNT</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm mb-1">Valor</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={promotionForm.value}
+                  onChange={(e) =>
+                    setPromotionForm({
+                      ...promotionForm,
+                      value: e.target.value,
+                    })
+                  }
+                  className="h-10 rounded-md"
+                  placeholder="10"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm mb-1">Inicio</label>
+                <Input
+                  type="datetime-local"
+                  value={promotionForm.start_date}
+                  onChange={(e) =>
+                    setPromotionForm({
+                      ...promotionForm,
+                      start_date: e.target.value,
+                    })
+                  }
+                  className="h-10 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">Fin</label>
+                <Input
+                  type="datetime-local"
+                  value={promotionForm.end_date}
+                  onChange={(e) =>
+                    setPromotionForm({
+                      ...promotionForm,
+                      end_date: e.target.value,
+                    })
+                  }
+                  className="h-10 rounded-md"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm mb-1">Producto</label>
+              <select
+                className="border rounded-md h-10 px-3 w-full"
+                value={promotionForm.product_id}
+                onChange={(e) =>
+                  setPromotionForm({
+                    ...promotionForm,
+                    product_id: e.target.value,
+                  })
+                }
+              >
+                <option value="">Seleccione producto</option>
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                id="promo-active"
+                type="checkbox"
+                checked={!!promotionForm.active}
+                onChange={(e) =>
+                  setPromotionForm({
+                    ...promotionForm,
+                    active: e.target.checked,
+                  })
+                }
+              />
+              <label htmlFor="promo-active" className="text-sm">
+                Activa
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsPromotionCreateOpen(false)}
+                disabled={savingPromotion}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={savePromotion}
+                className="bg-black text-white rounded-full px-6 h-10"
+                disabled={savingPromotion}
+              >
+                {savingPromotion ? "Guardando..." : "Guardar"}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+        <Modal
+          isOpen={isPromotionEditOpen}
+          onClose={() => setIsPromotionEditOpen(false)}
+          title="Editar promoción"
+          size="large"
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm mb-1">Nombre</label>
+              <Input
+                type="text"
+                value={promotionForm.name}
+                onChange={(e) =>
+                  setPromotionForm({ ...promotionForm, name: e.target.value })
+                }
+                className="h-10 rounded-md"
+                placeholder="Black Friday"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm mb-1">Descripción</label>
+              <Input
+                type="text"
+                value={promotionForm.description}
+                onChange={(e) =>
+                  setPromotionForm({
+                    ...promotionForm,
+                    description: e.target.value,
+                  })
+                }
+                className="h-10 rounded-md"
+                placeholder="Descuento especial"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm mb-1">Tipo</label>
+                <select
+                  className="border rounded-md h-10 px-3 w-full"
+                  value={promotionForm.type}
+                  onChange={(e) =>
+                    setPromotionForm({ ...promotionForm, type: e.target.value })
+                  }
+                >
+                  <option value="PERCENTAGE">PERCENTAGE</option>
+                  <option value="FIXED_AMOUNT">FIXED_AMOUNT</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm mb-1">Valor</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={promotionForm.value}
+                  onChange={(e) =>
+                    setPromotionForm({
+                      ...promotionForm,
+                      value: e.target.value,
+                    })
+                  }
+                  className="h-10 rounded-md"
+                  placeholder="10"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm mb-1">Inicio</label>
+                <Input
+                  type="datetime-local"
+                  value={promotionForm.start_date}
+                  onChange={(e) =>
+                    setPromotionForm({
+                      ...promotionForm,
+                      start_date: e.target.value,
+                    })
+                  }
+                  className="h-10 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">Fin</label>
+                <Input
+                  type="datetime-local"
+                  value={promotionForm.end_date}
+                  onChange={(e) =>
+                    setPromotionForm({
+                      ...promotionForm,
+                      end_date: e.target.value,
+                    })
+                  }
+                  className="h-10 rounded-md"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm mb-1">Producto</label>
+              <select
+                className="border rounded-md h-10 px-3 w-full"
+                value={promotionForm.product_id}
+                onChange={(e) =>
+                  setPromotionForm({
+                    ...promotionForm,
+                    product_id: e.target.value,
+                  })
+                }
+              >
+                <option value="">Seleccione producto</option>
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                id="promo-edit-active"
+                type="checkbox"
+                checked={!!promotionForm.active}
+                onChange={(e) =>
+                  setPromotionForm({
+                    ...promotionForm,
+                    active: e.target.checked,
+                  })
+                }
+              />
+              <label htmlFor="promo-edit-active" className="text-sm">
+                Activa
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsPromotionEditOpen(false)}
+                disabled={savingPromotion}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={updatePromotion}
+                className="bg-black text-white rounded-full px-6 h-10"
+                disabled={savingPromotion}
+              >
+                {savingPromotion ? "Guardando..." : "Guardar cambios"}
               </Button>
             </div>
           </div>
