@@ -117,7 +117,7 @@ export const useUserProfile = () => {
       
       console.log("📤 Data to send:", dataToSend);
       
-      const response = await fetch(`${API_BASE_URL}/users/${profile.id}`, {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -156,7 +156,7 @@ export const useUserProfile = () => {
 
     try {
       console.log("🔄 Deleting user account:", profile.id);
-      const response = await fetch(`${API_BASE_URL}/users/${profile.id}`, {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
