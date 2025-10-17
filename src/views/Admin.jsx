@@ -156,7 +156,7 @@ const Admin = () => {
   const fetchOrders = async () => {
     setOrdersLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/orders`, { headers: authHeaders });
+      const res = await fetch(`/orders`, { headers: authHeaders });
       const data = await res.json();
       setOrders(Array.isArray(data) ? data : []);
     } catch (e) {

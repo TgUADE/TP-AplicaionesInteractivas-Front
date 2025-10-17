@@ -64,7 +64,7 @@ export const useFavorites = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/favorites/products/${productId}`, {
         method: "POST",
-        headers,
+        headers,  
       });
 
       if (!response.ok) {
@@ -157,7 +157,7 @@ export const useFavorites = () => {
       });
 
       if (!response.ok) {
-        // Revert optimistic update on error
+        
         if (wasAlreadyFavorite) {
           // Restore the favorite
           setFavorites(prev => [...prev, { product: { id: productId } }]);
@@ -175,7 +175,7 @@ export const useFavorites = () => {
       
       return true;
     } catch (error) {
-      // Revert optimistic update on error
+      
       if (wasAlreadyFavorite) {
         setFavorites(prev => [...prev, { product: { id: productId } }]);
       } else {

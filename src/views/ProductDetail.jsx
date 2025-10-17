@@ -37,21 +37,7 @@ const ProductDetail = () => {
     return null;
   }
 
-  // Mock data for colors and storage options (you can extend this based on your product data)
-  const colorOptions = [
-    { name: "Deep Purple", color: "#4A148C", available: true },
-    { name: "Space Black", color: "#1A1A1A", available: true },
-    { name: "Silver", color: "#C0C0C0", available: true },
-    { name: "Gold", color: "#FFD700", available: true },
-    { name: "Product Red", color: "#FF0000", available: false }
-  ];
-
-  const storageOptions = [
-    { size: "128GB", price: product.currentPrice || product.price, available: true },
-    { size: "256GB", price: (product.currentPrice || product.price) + 100, available: true },
-    { size: "512GB", price: (product.currentPrice || product.price) + 200, available: true },
-    { size: "1TB", price: (product.currentPrice || product.price) + 400, available: true }
-  ];
+  
 
   // Ordenar imágenes por displayOrder
   const getSortedImages = () => {

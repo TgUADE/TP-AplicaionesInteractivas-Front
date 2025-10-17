@@ -5,6 +5,9 @@ import { useProducts } from "../hook/useProducts";
 import { useAuth } from "../hook/useAuth";
 import LoadingSpinner from "../components/UI/LoadingSpinner";
 import Button from "../components/UI/Button";
+import Modal from "../components/UI/Modal";
+import Input from "../components/UI/Input";
+import useOrder from "../hook/useOrder";
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -16,11 +19,22 @@ const Cart = () => {
     updateQuantity,
     removeFromCart,
     clearCart,
+    getCart,
     isLocalCart,
   } = useCart();
   const { products } = useProducts();
   const { isLoggedIn } = useAuth();
   const [cartProducts, setCartProducts] = useState([]);
+  const { createOrder, isLoading: isCreating, error: orderError, order } = useOrder();
+  
+  // Estado del modal y formulario de checkout
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [checkoutData, setCheckoutData] = useState({
+    shippingAddress: "",
+    billingAddress: "",
+    paymentMethod: "Credit Card",
+  });
+  const [sameAddress, setSameAddress] = useState(true);
 
   // Combinar los items del carrito con la información de los productos
   useEffect(() => {
@@ -33,7 +47,7 @@ const Cart = () => {
             product: product || null,
           };
         })
-        .filter((item) => item.product); // Solo incluir productos que existen
+        .filter((item) => item.product);
 
       setCartProducts(productsWithDetails);
     } else {
@@ -59,19 +73,105 @@ const Cart = () => {
     }
   };
 
-  const handleProductClick = (productId, e) => {
-    // Don't navigate if clicking on interactive elements
-    if (e.target.closest('button')) {
-      return;
-    }
-    navigate(`/product/${productId}`);
-  };
-
   const calculateTotal = () => {
     return cartProducts.reduce((total, item) => {
       const price = item.product?.current_price || item.product?.price || 0;
       return total + price * item.quantity;
     }, 0);
+  };
+
+  // Abrir modal de checkout
+  const handleProceedToCheckout = () => {
+    setShowCheckoutModal(true);
+  };
+
+  // Manejar cambios en el formulario
+  const handleCheckoutInputChange = (e) => {
+    const { name, value } = e.target;
+    setCheckoutData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Manejar checkbox de misma dirección
+  const handleSameAddressChange = (e) => {
+    const checked = e.target.checked;
+    setSameAddress(checked);
+    if (checked) {
+      setCheckoutData(prev => ({
+        ...prev,
+        billingAddress: prev.shippingAddress
+      }));
+    }
+  };
+
+  // Sincronizar billing con shipping si están iguales
+  useEffect(() => {
+    if (sameAddress) {
+      setCheckoutData(prev => ({
+        ...prev,
+        billingAddress: prev.shippingAddress
+      }));
+    }
+  }, [checkoutData.shippingAddress, sameAddress]);
+
+  // Confirmar y crear orden
+  const handleConfirmOrder = async () => {
+    if (!cart?.id) {
+      alert("Cart not found");
+      return;
+    }
+
+    // Validar campos requeridos
+    if (!checkoutData.shippingAddress.trim()) {
+      alert("Please enter a shipping address");
+      return;
+    }
+    
+    // Si sameAddress está marcado, usar shippingAddress como billingAddress
+    const finalBillingAddress = sameAddress 
+      ? checkoutData.shippingAddress 
+      : checkoutData.billingAddress;
+    
+    if (!finalBillingAddress.trim()) {
+      alert("Please enter a billing address");
+      return;
+    }
+    if (!checkoutData.paymentMethod) {
+      alert("Please select a payment method");
+      return;
+    }
+
+    const orderData = {
+      cartId: cart.id,
+      status: "PENDING",
+      shippingAddress: checkoutData.shippingAddress,
+      billingAddress: finalBillingAddress,
+      paymentMethod: checkoutData.paymentMethod,
+    };
+
+    const data = await createOrder(orderData);
+    if (data) {
+      alert(`Order created successfully! Order ID: ${data.id}`);
+      setShowCheckoutModal(false);
+      
+      // Recargar el carrito para crear uno nuevo automáticamente
+      // (El carrito anterior queda asociado a la orden)
+      await getCart();
+      
+      // Opcional: redirigir a página de órdenes o confirmación
+      // navigate(`/orders/${data.id}`);
+    } else if (orderError) {
+      alert(`Error creating order: ${orderError}`);
+    }
+  };
+
+  const handleProductClick = (productId, e) => {
+    if (e.target.closest('button')) {
+      return;
+    }
+    navigate(`/product/${productId}`);
   };
 
   if (isLoading && !cart && isLoggedIn) {
@@ -140,7 +240,7 @@ const Cart = () => {
                 {cartProducts.map((item) => (
                   <div
                     key={item.productId}
-                    className="bg-gray-50 rounded-lg p-6 flex items-center space-x-4 cursor-pointer "
+                    className="bg-gray-50 rounded-lg p-6 flex items-center space-x-4 cursor-pointer"
                     onClick={(e) => handleProductClick(item.productId, e)}
                   >
                     <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
@@ -249,8 +349,12 @@ const Cart = () => {
                   </div>
                 </div>
 
-                <Button className="w-full mt-4" disabled={isLoading}>
-                  {isLoading ? "Processing..." : "Proceed to Checkout"}
+                <Button
+                  className="w-full mt-4"
+                  disabled={isCreating || !cart?.id || isLocalCart}
+                  onClick={handleProceedToCheckout}
+                >
+                  {isCreating ? "Processing..." : "Proceed to Checkout"}
                 </Button>
 
                 {isLocalCart && (
@@ -261,6 +365,105 @@ const Cart = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Modal de Checkout */}
+        {showCheckoutModal && (
+          <Modal
+            isOpen={showCheckoutModal}
+            onClose={() => setShowCheckoutModal(false)}
+            title="Checkout"
+          >
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Shipping Address *
+                </label>
+                <Input
+                  name="shippingAddress"
+                  value={checkoutData.shippingAddress}
+                  onChange={handleCheckoutInputChange}
+                  placeholder="Street, City, Postal Code, Country"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="sameAddress"
+                  checked={sameAddress}
+                  onChange={handleSameAddressChange}
+                  className="rounded"
+                />
+                <label htmlFor="sameAddress" className="text-sm text-gray-700">
+                  Billing address same as shipping
+                </label>
+              </div>
+
+              {!sameAddress && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Billing Address *
+                  </label>
+                  <Input
+                    name="billingAddress"
+                    value={checkoutData.billingAddress}
+                    onChange={handleCheckoutInputChange}
+                    placeholder="Street, City, Postal Code, Country"
+                    className="w-full"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Method *
+                </label>
+                <select
+                  name="paymentMethod"
+                  value={checkoutData.paymentMethod}
+                  onChange={handleCheckoutInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Credit Card">Credit Card</option>
+                  <option value="Debit Card">Debit Card</option>
+                  <option value="PayPal">PayPal</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Cash on Delivery">Cash on Delivery</option>
+                </select>
+              </div>
+
+              <div className="border-t pt-4 mt-4">
+                <div className="flex justify-between text-lg font-semibold mb-4">
+                  <span>Total to pay:</span>
+                  <span>${calculateTotal().toFixed(2)}</span>
+                </div>
+
+                {orderError && (
+                  <p className="text-sm text-red-600 mb-3">{orderError}</p>
+                )}
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCheckoutModal(false)}
+                    className="flex-1"
+                    disabled={isCreating}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleConfirmOrder}
+                    className="flex-1"
+                    disabled={isCreating}
+                  >
+                    {isCreating ? "Processing..." : "Confirm Order"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Modal>
         )}
       </div>
     </div>
