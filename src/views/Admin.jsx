@@ -3,6 +3,7 @@ import Button from "../components/UI/Button";
 import Input from "../components/UI/Input";
 import { useAuth } from "../hook/useAuth";
 import Modal from "../components/UI/Modal";
+import LoadingSpinner from "../components/UI/LoadingSpinner";
 
 const API_BASE = "/api";
 
@@ -66,6 +67,19 @@ const Admin = () => {
   const [isPromotionCreateOpen, setIsPromotionCreateOpen] = useState(false);
   const [isPromotionEditOpen, setIsPromotionEditOpen] = useState(false);
   const [savingPromotion, setSavingPromotion] = useState(false);
+  const [pendingPromotionId, setPendingPromotionId] = useState(null);
+
+  const [errorModal, setErrorModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+  });
+  const openError = (title, message) => {
+    setErrorModal({ open: true, title, message });
+  };
+  const closeError = () => {
+    setErrorModal({ open: false, title: "", message: "" });
+  };
 
   //Categorias
   const [isCategoryCreateOpen, setIsCategoryCreateOpen] = useState(false);
@@ -104,6 +118,12 @@ const Admin = () => {
     [token]
   );
 
+  const [orderProductsModal, setOrderProductsModal] = useState({
+    open: false,
+    items: [],
+    orderId: null,
+  });
+
   useEffect(() => {
     fetchAll();
   }, []);
@@ -127,9 +147,19 @@ const Admin = () => {
     if (ordersPage > tp) setOrdersPage(tp);
   }, [orders]);
 
-  // Al entrar a la pestaña promociones, cargar
+  // Al entrar a la pestaña promociones, cargar promociones
+
   useEffect(() => {
-    if (activeTab === "promociones") fetchPromotions();
+    if (activeTab === "promociones") {
+      fetchPromotions();
+    }
+  }, [activeTab]);
+  useEffect(() => {
+    const handler = () => {
+      if (activeTab === "promociones") fetchPromotions();
+    };
+    window.addEventListener("promotions_updated", handler);
+    return () => window.removeEventListener("promotions_updated", handler);
   }, [activeTab]);
 
   useEffect(() => {
@@ -167,6 +197,51 @@ const Admin = () => {
     }
   };
 
+  const parseOrderItems = (o) => {
+    if (!o) return [];
+    if (Array.isArray(o.products)) return o.products;
+    if (Array.isArray(o.items)) return o.items;
+    if (Array.isArray(o.orderItems)) return o.orderItems;
+    if (o.productsJson) {
+      try {
+        const arr =
+          typeof o.productsJson === "string"
+            ? JSON.parse(o.productsJson)
+            : o.productsJson;
+        return Array.isArray(arr) ? arr : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  const openOrderProducts = (order) => {
+    setOrderProductsModal({
+      open: true,
+      items: parseOrderItems(order),
+      orderId: order?.id ?? order?.orderId ?? null,
+    });
+  };
+
+  const closeOrderProducts = () =>
+    setOrderProductsModal((p) => ({ ...p, open: false }));
+
+  // Helpers de mapeo de ítems
+  const getItemName = (it) =>
+    it?.productName ?? `Producto ${it?.product_id ?? ""}`;
+
+  const getItemQty = (it) =>
+    Number(it?.quantity ?? it?.qty ?? it?.amount ?? it?.count ?? 1);
+
+  const getItemPrice = (it) =>
+    Number(
+      it?.price ?? it?.unit_price ?? it?.unitPrice ?? it?.product?.price ?? 0
+    );
+
+  const getItemSubtotal = (it) =>
+    Number(it?.subtotal ?? getItemQty(it) * getItemPrice(it));
+
   // Fechas backend: agrega :00 si falta segundos
   const toBackendDate = (s) => (s ? (s.length === 16 ? `${s}:00` : s) : "");
 
@@ -196,10 +271,11 @@ const Admin = () => {
       "name",
       "surname",
       "email",
-      "createdAt",
       "phone",
       "city",
       "state",
+      "address",
+      "zip",
       "country",
     ];
     const escapeCSV = (v) => {
@@ -214,10 +290,11 @@ const Admin = () => {
         u.name,
         u.surname,
         u.email,
-        u.createdAt,
         u.phone,
         u.city,
         u.state,
+        u.address,
+        u.zip,
         u.country,
       ]
         .map(escapeCSV)
@@ -501,11 +578,32 @@ const Admin = () => {
 
   const savePromotion = async () => {
     try {
+      const valueNum = Number(promotionForm.value);
+
+      // Validación UI (opcional pero útil para evitar 500)
+      if (promotionForm.type === "PERCENTAGE") {
+        if (isNaN(valueNum) || valueNum <= 0 || valueNum > 70) {
+          openError(
+            "Error creando promoción",
+            "Para tipo PERCENTAGE, el valor debe ser entre 1 y 70."
+          );
+          return;
+        }
+      } else if (promotionForm.type === "FIXED_AMOUNT") {
+        if (isNaN(valueNum) || valueNum <= 0) {
+          openError(
+            "Error creando promoción",
+            "Para tipo FIXED_AMOUNT, el valor debe ser mayor a 0."
+          );
+          return;
+        }
+      }
+
       const body = {
         name: promotionForm.name,
         description: promotionForm.description,
         type: promotionForm.type,
-        value: Number(promotionForm.value),
+        value: valueNum,
         start_date: toBackendDate(promotionForm.start_date),
         end_date: toBackendDate(promotionForm.end_date),
         product_id: promotionForm.product_id,
@@ -517,13 +615,29 @@ const Admin = () => {
         headers: authHeaders,
         body: JSON.stringify(body),
       });
-      if (!res.ok)
-        throw new Error((await res.text()) || "Error creando promoción");
+
+      if (!res.ok) {
+        let msg = "";
+        try {
+          const txt = await res.text();
+          try {
+            const json = JSON.parse(txt);
+            msg = json.message || json.error || txt;
+          } catch {
+            msg = txt;
+          }
+        } catch {
+          msg = "Error creando promoción";
+        }
+        openError("Error creando promoción", msg);
+        return;
+      }
+
       setIsPromotionCreateOpen(false);
+      await fetchPromotions();
       window.dispatchEvent(new Event("promotions_updated"));
     } catch (e) {
-      console.error(e);
-      alert(e.message);
+      openError("Error creando promoción", e?.message || "Error desconocido");
     } finally {
       setSavingPromotion(false);
     }
@@ -548,12 +662,35 @@ const Admin = () => {
 
   const updatePromotion = async () => {
     try {
-      if (!promotionForm.id) return alert("Promoción inválida");
+      if (!promotionForm.id)
+        return openError("Error actualizando promoción", "Promoción inválida");
+
+      const valueNum = Number(promotionForm.value);
+
+      // Validación UI (opcional)
+      if (promotionForm.type === "PERCENTAGE") {
+        if (isNaN(valueNum) || valueNum <= 0 || valueNum > 70) {
+          openError(
+            "Error actualizando promoción",
+            "Para tipo PERCENTAGE, el valor debe ser entre 1 y 70."
+          );
+          return;
+        }
+      } else if (promotionForm.type === "FIXED_AMOUNT") {
+        if (isNaN(valueNum) || valueNum <= 0) {
+          openError(
+            "Error actualizando promoción",
+            "Para tipo FIXED_AMOUNT, el valor debe ser mayor a 0."
+          );
+          return;
+        }
+      }
+
       const body = {
         name: promotionForm.name,
         description: promotionForm.description,
         type: promotionForm.type,
-        value: Number(promotionForm.value),
+        value: valueNum,
         start_date: toBackendDate(promotionForm.start_date),
         end_date: toBackendDate(promotionForm.end_date),
         product_id: promotionForm.product_id,
@@ -565,13 +702,32 @@ const Admin = () => {
         headers: authHeaders,
         body: JSON.stringify(body),
       });
-      if (!res.ok)
-        throw new Error((await res.text()) || "Error actualizando promoción");
+
+      if (!res.ok) {
+        let msg = "";
+        try {
+          const txt = await res.text();
+          try {
+            const json = JSON.parse(txt);
+            msg = json.message || json.error || txt;
+          } catch {
+            msg = txt;
+          }
+        } catch {
+          msg = "Error actualizando promoción";
+        }
+        openError("Error actualizando promoción", msg);
+        return;
+      }
+
       setIsPromotionEditOpen(false);
+      await fetchPromotions();
       window.dispatchEvent(new Event("promotions_updated"));
     } catch (e) {
-      console.error(e);
-      alert(e.message);
+      openError(
+        "Error actualizando promoción",
+        e?.message || "Error desconocido"
+      );
     } finally {
       setSavingPromotion(false);
     }
@@ -587,6 +743,7 @@ const Admin = () => {
       });
       if (!res.ok)
         throw new Error((await res.text()) || "Error eliminando promoción");
+      await fetchPromotions();
       window.dispatchEvent(new Event("promotions_updated"));
     } catch (e) {
       console.error(e);
@@ -596,31 +753,40 @@ const Admin = () => {
 
   // Activar/Desactivar
   const activatePromotion = async (id) => {
+    console.log("activatePromotion", id);
     try {
+      setPendingPromotionId(id);
       const res = await fetch(`${API_BASE}/promotions/${id}/activate`, {
         method: "PUT",
         headers: authHeaders,
       });
       if (!res.ok)
         throw new Error((await res.text()) || "Error activando promoción");
+      await fetchPromotions();
       window.dispatchEvent(new Event("promotions_updated"));
     } catch (e) {
       console.error(e);
       alert(e.message);
+    } finally {
+      setPendingPromotionId(null);
     }
   };
   const deactivatePromotion = async (id) => {
     try {
+      setPendingPromotionId(id);
       const res = await fetch(`${API_BASE}/promotions/${id}/deactivate`, {
         method: "PUT",
         headers: authHeaders,
       });
       if (!res.ok)
         throw new Error((await res.text()) || "Error desactivando promoción");
+      await fetchPromotions();
       window.dispatchEvent(new Event("promotions_updated"));
     } catch (e) {
       console.error(e);
       alert(e.message);
+    } finally {
+      setPendingPromotionId(null);
     }
   };
 
@@ -917,15 +1083,25 @@ const Admin = () => {
                               <Button
                                 onClick={() => deactivatePromotion(pr.id)}
                                 className="h-9 px-4 rounded-full border"
+                                disabled={pendingPromotionId === pr.id}
                               >
-                                Desactivar
+                                {pendingPromotionId === pr.id ? (
+                                  <LoadingSpinner size="small" color="gray" />
+                                ) : (
+                                  "Desactivar"
+                                )}
                               </Button>
                             ) : (
                               <Button
                                 onClick={() => activatePromotion(pr.id)}
                                 className="h-9 px-4 rounded-full border"
+                                disabled={pendingPromotionId === pr.id}
                               >
-                                Activar
+                                {pendingPromotionId === pr.id ? (
+                                  <LoadingSpinner size="small" color="gray" />
+                                ) : (
+                                  "Activar"
+                                )}
                               </Button>
                             )}
                             <Button
@@ -951,6 +1127,8 @@ const Admin = () => {
             </div>
           </div>
         )}
+
+        {/* Categorias */}
 
         {activeTab === "categorias" && (
           <div className="space-y-8">
@@ -1045,24 +1223,31 @@ const Admin = () => {
                         <th className="px-4 py-3">Nombre</th>
                         <th className="px-4 py-3">Apellido</th>
                         <th className="px-4 py-3">Email</th>
-                        <th className="px-4 py-3">Rol</th>
-                        <th className="px-4 py-3">Creado</th>
+                        <th className="px-4 py-3">Direccion</th>
+                        <th className="px-4 py-3">Ciudad</th>
+                        <th className="px-4 py-3">Codigo Postal</th>
+                        <th className="px-4 py-3">Pais</th>
+                        <th className="px-4 py-3">Telefono</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {users.map((u) => (
-                        <tr key={u.id} className="border-b last:border-0">
-                          <td className="px-4 py-3">{u.name ?? "-"}</td>
-                          <td className="px-4 py-3">{u.surname ?? "-"}</td>
-                          <td className="px-4 py-3">{u.email ?? "-"}</td>
-                          <td className="px-4 py-3">{u.role ?? "-"}</td>
-                          <td className="px-4 py-3">
-                            {u.createdAt
-                              ? new Date(u.createdAt).toLocaleString()
-                              : "-"}
-                          </td>
-                        </tr>
-                      ))}
+                      {users.map(
+                        (u) => (
+                          console.log(u),
+                          (
+                            <tr key={u.id} className="border-b last:border-0">
+                              <td className="px-4 py-3">{u.name ?? "-"}</td>
+                              <td className="px-4 py-3">{u.surname ?? "-"}</td>
+                              <td className="px-4 py-3">{u.email ?? "-"}</td>
+                              <td className="px-4 py-3">{u.address ?? "-"}</td>
+                              <td className="px-4 py-3">{u.city ?? "-"}</td>
+                              <td className="px-4 py-3">{u.zip ?? "-"}</td>
+                              <td className="px-4 py-3">{u.country ?? "-"}</td>
+                              <td className="px-4 py-3">{u.phone ?? "-"}</td>
+                            </tr>
+                          )
+                        )
+                      )}
                       {users.length === 0 && (
                         <tr>
                           <td className="px-4 py-6" colSpan={5}>
@@ -1098,7 +1283,11 @@ const Admin = () => {
                       <tr>
                         <th className="px-4 py-3">Cliente</th>
                         <th className="px-4 py-3">Total</th>
+                        <th className="px-4 py-3">Metodo de Pago</th>
                         <th className="px-4 py-3">Estado</th>
+                        <th className="px-4 py-3">Producto</th>
+                        <th className="px-4 py-3">Direccion Facturacion</th>
+                        <th className="px-4 py-3">Direccion Envio</th>
                         <th className="px-4 py-3">Creada</th>
                       </tr>
                     </thead>
@@ -1114,7 +1303,26 @@ const Admin = () => {
                           <td className="px-4 py-3">
                             {o.totalAmount ?? o.total ?? o.amount ?? "-"}
                           </td>
+                          <td className="px-4 py-3">
+                            {o.paymentMethod ?? "-"}
+                          </td>
                           <td className="px-4 py-3">{o.status ?? "-"}</td>
+                          <td className="px-4 py-3">
+                            <button
+                              onClick={() => openOrderProducts(o)}
+                              className="inline-flex items-center gap-2 text-blue-600 hover:underline"
+                              title="Ver productos de la orden"
+                            >
+                              <span className="inline-block">▶</span>
+                              <span>{parseOrderItems(o).length}</span>
+                            </button>
+                          </td>
+                          <td className="px-4 py-3">
+                            {o.billing_address ?? o.billingAddress ?? "-"}
+                          </td>
+                          <td className="px-4 py-3">
+                            {o.shipping_address ?? o.shippingAddress ?? "-"}
+                          </td>
                           <td className="px-4 py-3">
                             {o.createdAt
                               ? new Date(o.createdAt).toLocaleString()
@@ -1944,6 +2152,81 @@ const Admin = () => {
                 {savingPromotion ? "Guardando..." : "Guardar cambios"}
               </Button>
             </div>
+          </div>
+        </Modal>
+        <Modal
+          isOpen={errorModal.open}
+          onClose={closeError}
+          title={errorModal.title || "Error"}
+          size="medium"
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-red-700 whitespace-pre-wrap">
+              {errorModal.message}
+            </p>
+            <div className="flex justify-end">
+              <Button
+                onClick={closeError}
+                className="bg-black text-white rounded-full px-6 h-10"
+              >
+                Cerrar
+              </Button>
+            </div>
+          </div>
+        </Modal>
+        {/* Modal de productos de la orden */}
+        <Modal
+          isOpen={orderProductsModal.open}
+          onClose={closeOrderProducts}
+          title={`Productos de la orden`}
+          size="large"
+        >
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="border-b bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3">Producto</th>
+                  <th className="px-4 py-3">Cantidad</th>
+                  <th className="px-4 py-3">Precio</th>
+                  <th className="px-4 py-3">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orderProductsModal.items.length ? (
+                  orderProductsModal.items.map((it, idx) => {
+                    const name = getItemName(it);
+                    const qty = getItemQty(it);
+                    const price = getItemPrice(it);
+                    const subtotal = getItemSubtotal(it);
+                    return (
+                      <tr
+                        key={it.id ?? it.productId ?? it.product_id ?? idx}
+                        className="border-b last:border-0"
+                      >
+                        <td className="px-4 py-3">{name}</td>
+                        <td className="px-4 py-3">{qty}</td>
+                        <td className="px-4 py-3">${price}</td>
+                        <td className="px-4 py-3">${subtotal}</td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td className="px-4 py-6" colSpan={4}>
+                      Sin productos
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex justify-end pt-3">
+            <Button
+              onClick={closeOrderProducts}
+              className="bg-black text-white rounded-full px-6 h-10"
+            >
+              Cerrar
+            </Button>
           </div>
         </Modal>
       </main>
