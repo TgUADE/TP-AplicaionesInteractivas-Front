@@ -26,8 +26,13 @@ const Cart = () => {
   const { products } = useProducts();
   const { isLoggedIn } = useAuth();
   const [cartProducts, setCartProducts] = useState([]);
-  const { createOrder, isLoading: isCreating, error: orderError, order } = useOrder();
-  
+  const {
+    createOrder,
+    isLoading: isCreating,
+    error: orderError,
+    order,
+  } = useOrder();
+
   // Estado del modal y formulario de checkout
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [checkoutData, setCheckoutData] = useState({
@@ -36,7 +41,7 @@ const Cart = () => {
     paymentMethod: "Credit Card",
   });
   const [sameAddress, setSameAddress] = useState(true);
-  
+
   // Estado del modal de confirmación
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [confirmedOrder, setConfirmedOrder] = useState(null);
@@ -44,16 +49,12 @@ const Cart = () => {
 
   // Combinar los items del carrito con la información de los productos
   useEffect(() => {
-    if (cartItems.length > 0 && products.length > 0) {
-      const productsWithDetails = cartItems
-        .map((cartItem) => {
-          const product = products.find((p) => p.id === cartItem.productId);
-          return {
-            ...cartItem,
-            product: product || null,
-          };
-        })
-        .filter((item) => item.product);
+    if (cartItems.length > 0) {
+      const productsWithDetails = cartItems.map((cartItem) => {
+        const product =
+          products.find((p) => p.id === cartItem.productId) || null;
+        return { ...cartItem, product };
+      });
 
       setCartProducts(productsWithDetails);
     } else {
@@ -94,9 +95,9 @@ const Cart = () => {
   // Manejar cambios en el formulario
   const handleCheckoutInputChange = (e) => {
     const { name, value } = e.target;
-    setCheckoutData(prev => ({
+    setCheckoutData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -105,9 +106,9 @@ const Cart = () => {
     const checked = e.target.checked;
     setSameAddress(checked);
     if (checked) {
-      setCheckoutData(prev => ({
+      setCheckoutData((prev) => ({
         ...prev,
-        billingAddress: prev.shippingAddress
+        billingAddress: prev.shippingAddress,
       }));
     }
   };
@@ -115,9 +116,9 @@ const Cart = () => {
   // Sincronizar billing con shipping si están iguales
   useEffect(() => {
     if (sameAddress) {
-      setCheckoutData(prev => ({
+      setCheckoutData((prev) => ({
         ...prev,
-        billingAddress: prev.shippingAddress
+        billingAddress: prev.shippingAddress,
       }));
     }
   }, [checkoutData.shippingAddress, sameAddress]);
@@ -134,12 +135,12 @@ const Cart = () => {
       alert("Please enter a shipping address");
       return;
     }
-    
+
     // Si sameAddress está marcado, usar shippingAddress como billingAddress
-    const finalBillingAddress = sameAddress 
-      ? checkoutData.shippingAddress 
+    const finalBillingAddress = sameAddress
+      ? checkoutData.shippingAddress
       : checkoutData.billingAddress;
-    
+
     if (!finalBillingAddress.trim()) {
       alert("Please enter a billing address");
       return;
@@ -162,16 +163,16 @@ const Cart = () => {
       // Guardar la información de la orden y productos para el modal de confirmación
       setConfirmedOrder(data);
       setConfirmedProducts([...cartProducts]);
-      
+
       // Cerrar modal de checkout y abrir modal de confirmación
       setShowCheckoutModal(false);
       setShowConfirmationModal(true);
-      
+
       // Crear un nuevo carrito vacío explícitamente
       // El carrito anterior quedó asociado a la orden
       console.log("🛒 Creando nuevo carrito después de la orden...");
       const newCart = await createCart();
-      
+
       if (newCart) {
         console.log("✅ Nuevo carrito creado:", newCart.id);
         // Emitir evento de actualización del carrito para otros componentes
@@ -187,7 +188,7 @@ const Cart = () => {
     setShowConfirmationModal(false);
     setConfirmedOrder(null);
     setConfirmedProducts([]);
-    
+
     // Resetear formulario de checkout para la próxima compra
     setCheckoutData({
       shippingAddress: "",
@@ -198,7 +199,7 @@ const Cart = () => {
   };
 
   const handleProductClick = (productId, e) => {
-    if (e.target.closest('button')) {
+    if (e.target.closest("button")) {
       return;
     }
     navigate(`/product/${productId}`);
@@ -234,9 +235,7 @@ const Cart = () => {
     <div className="min-h-screen bg-white w-full">
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">
-            Shopping Cart
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-800">Shopping Cart</h1>
           {isLocalCart && (
             <div className="flex items-center gap-2 text-sm text-orange-600 bg-orange-50 px-3 py-2 rounded-lg">
               <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
@@ -249,7 +248,7 @@ const Cart = () => {
           )}
         </div>
 
-        {cartProducts.length === 0 ? (
+        {cartItems.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🛒</div>
             <h2 className="text-2xl font-semibold text-gray-700 mb-2">
@@ -286,12 +285,19 @@ const Cart = () => {
                     </div>
 
                     <div className="flex-1">
-                      <h3 className="font-semibold text-gray-800">
-                        {item.product?.name}
-                      </h3>
-                      <p className="text-gray-600">
-                        ${(item.product?.current_price || item.product?.price || 0).toFixed(2)}
-                      </p>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-800">
+                          {item.product?.name || "Loading..."}
+                        </h3>
+                        <p className="text-gray-600">
+                          $
+                          {(
+                            item.product?.current_price ||
+                            item.product?.price ||
+                            0
+                          ).toFixed(2)}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="flex items-center space-x-2">
@@ -324,7 +330,12 @@ const Cart = () => {
 
                     <div className="text-right">
                       <p className="font-semibold">
-                        ${((item.product?.current_price || item.product?.price || 0) * item.quantity).toFixed(2)}
+                        $
+                        {(
+                          (item.product?.current_price ||
+                            item.product?.price ||
+                            0) * item.quantity
+                        ).toFixed(2)}
                       </p>
                       <button
                         onClick={(e) => {
@@ -367,7 +378,14 @@ const Cart = () => {
                       <span>
                         {item.product?.name} x {item.quantity}
                       </span>
-                      <span>${((item.product?.current_price || item.product?.price || 0) * item.quantity).toFixed(2)}</span>
+                      <span>
+                        $
+                        {(
+                          (item.product?.current_price ||
+                            item.product?.price ||
+                            0) * item.quantity
+                        ).toFixed(2)}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -524,16 +542,15 @@ const Cart = () => {
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">
                   Order Confirmed!
                 </h2>
-                <p className="text-gray-600">
-                  Thank you for your purchase
-                </p>
+                <p className="text-gray-600">Thank you for your purchase</p>
               </div>
 
               {/* Información de la Orden */}
               <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-
                 <div className="flex justify-between items-center pb-3 border-b border-gray-200">
-                  <span className="text-sm font-medium text-gray-600">Status</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    Status
+                  </span>
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                     {confirmedOrder.status}
                   </span>
@@ -601,7 +618,12 @@ const Cart = () => {
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-semibold text-gray-900">
-                          ${((item.product?.current_price || item.product?.price || 0) * item.quantity).toFixed(2)}
+                          $
+                          {(
+                            (item.product?.current_price ||
+                              item.product?.price ||
+                              0) * item.quantity
+                          ).toFixed(2)}
                         </p>
                       </div>
                     </div>
@@ -612,13 +634,21 @@ const Cart = () => {
               {/* Total */}
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center mb-4">
-                  <span className="text-lg font-semibold text-gray-900">Total</span>
+                  <span className="text-lg font-semibold text-gray-900">
+                    Total
+                  </span>
                   <span className="text-2xl font-bold text-gray-900">
-                    ${confirmedOrder.totalAmount?.toFixed(2) || 
-                      confirmedProducts.reduce((total, item) => {
-                        const price = item.product?.current_price || item.product?.price || 0;
-                        return total + (price * item.quantity);
-                      }, 0).toFixed(2)}
+                    $
+                    {confirmedOrder.totalAmount?.toFixed(2) ||
+                      confirmedProducts
+                        .reduce((total, item) => {
+                          const price =
+                            item.product?.current_price ||
+                            item.product?.price ||
+                            0;
+                          return total + price * item.quantity;
+                        }, 0)
+                        .toFixed(2)}
                   </span>
                 </div>
 
@@ -628,7 +658,7 @@ const Cart = () => {
                     variant="outline"
                     onClick={() => {
                       handleCloseConfirmationModal();
-                      navigate('/products');
+                      navigate("/products");
                     }}
                     className="flex-1"
                   >
