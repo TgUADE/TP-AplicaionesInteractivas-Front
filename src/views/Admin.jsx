@@ -40,7 +40,8 @@ const Admin = () => {
 
   const [isImageOpen, setIsImageOpen] = useState(false);
   const [imageProduct, setImageProduct] = useState(null);
-  const [deletingImage, setDeletingImage] = useState(false);
+  const [deletingImageId, setDeletingImageId] = useState(null);
+  const [deletingImage, setDelletingImage] = useState(false);
   const [imageForm, setImageForm] = useState({
     imageUrl: "",
     altText: "",
@@ -587,6 +588,7 @@ const Admin = () => {
       alert(e.message);
     } finally {
       setSavingImage(false);
+      setIsImageOpen(false);
     }
   };
 
@@ -598,7 +600,8 @@ const Admin = () => {
     
     if (!confirm("¿Eliminar imagen?")) return;
     try {
-      setDeletingImage(true);
+      setDelletingImage(true)
+      setDeletingImageId(imageId);
       const res = await fetch(`${API_BASE}/products/${imageProduct.id}/images/${imageId}`, {
         method: "DELETE",
         headers: authHeaders,
@@ -1679,21 +1682,22 @@ const Admin = () => {
                             {img.displayOrder ?? "-"}
                           </td>
                           <td className="px-3 py-2">
-                            {/* Edit image button */}
+                            
                             <Button
                               onClick={() => openEditImage(img)}
                             >
                               Editar
                             </Button>
                           </td>
-                          {/* Make button red for delete as in other places */}
+                          
                           <td className="px-3 py-2">
                             <Button
                               onClick={() => deleteImage(img.id)}
-                              disabled={deletingImage}
+                              disabled={deletingImage && deletingImageId === img.id}
                               className="bg-red-600 text-white hover:bg-red-700"
                             >
-                              {deletingImage ? "Eliminando..." : "Eliminar"}
+                              {/* Deleting image button only for the image being deleted */}
+                              {deletingImageId === img.id ? "Eliminando..." : "Eliminar"}
                             </Button>
                           </td>
                         </tr>
