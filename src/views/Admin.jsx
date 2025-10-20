@@ -18,7 +18,7 @@ const emptyProduct = {
 
 const Admin = () => {
   const { token } = useAuth();
-  const [activeTab, setActiveTab] = useState("productos"); // única pestaña por ahora
+  const [activeTab, setActiveTab] = useState("productos"); 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,12 +40,16 @@ const Admin = () => {
 
   const [isImageOpen, setIsImageOpen] = useState(false);
   const [imageProduct, setImageProduct] = useState(null);
+  const [deletingImage, setDeletingImage] = useState(false);
   const [imageForm, setImageForm] = useState({
     imageUrl: "",
     altText: "",
     isPrimary: true,
     displayOrder: 1,
   });
+
+
+  const [editingImage, setEditingImage] = useState(false);
   const [savingImage, setSavingImage] = useState(false);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -501,6 +505,7 @@ const Admin = () => {
 
   const openImageModal = (p) => {
     setImageProduct(p);
+
     setImageForm({
       imageUrl: "",
       altText: "",
@@ -508,7 +513,10 @@ const Admin = () => {
       displayOrder: 1,
     });
     setIsImageOpen(true);
+    setEditingImage(false);
   };
+
+  
 
   const uploadImage = async () => {
     try {
@@ -546,6 +554,83 @@ const Admin = () => {
       setSavingImage(false);
     }
   };
+  const editImage = async () => {
+    try {
+      if (!imageProduct?.id) {
+        alert("Producto inválido");
+        return;
+      }
+      if (!imageForm.imageUrl) {
+        alert("Ingresa la URL de la imagen");
+        return;
+      }
+      setSavingImage(true);
+      const body = {
+        imageUrl: imageForm.imageUrl,
+        altText: imageForm.altText,
+        isPrimary: Boolean(imageForm.isPrimary),
+        displayOrder: Number(imageForm.displayOrder),
+      };
+      const res= await fetch(
+        `${API_BASE}/products/${imageProduct.id}/images/${imageForm.id}`,
+        {
+          method: "PUT",
+          headers: authHeaders,
+          body: JSON.stringify(body),
+        }
+      );
+      if (!res.ok)
+        throw new Error((await res.text()) || "Error editando imagen");
+      alert("Imagen editada");
+    } catch (e) {
+      console.error(e);
+      alert(e.message);
+    } finally {
+      setSavingImage(false);
+    }
+  };
+
+  const deleteImage = async (imageId) => {
+    if (!imageProduct?.id) {
+      alert("Producto inválido");
+      return;
+    }
+    
+    if (!confirm("¿Eliminar imagen?")) return;
+    try {
+      setDeletingImage(true);
+      const res = await fetch(`${API_BASE}/products/${imageProduct.id}/images/${imageId}`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
+      if (!res.ok)
+        throw new Error((await res.text()) || "Error eliminando imagen");
+      alert("Imagen eliminada");
+      setIsImageOpen(false);
+    } catch (e) {
+      console.error(e);
+      alert(e.message);
+    } finally {
+      setDeletingImage(false);
+    }
+  };
+
+
+  const openEditImage = (image) => {
+    setEditingImage(true);
+    setImageForm({
+      id: image.id,
+      imageUrl: image.imageUrl,
+      altText: image.altText,
+      isPrimary: image.isPrimary,
+      displayOrder: image.displayOrder,
+    });
+
+    setIsImageOpen(true);
+  };
+
+
+
 
   const openCreate = () => {
     setForm(emptyProduct);
@@ -1525,13 +1610,17 @@ const Admin = () => {
             </div>
           </div>
         </Modal>
-        <Modal
+        <Modal 
+
           isOpen={isImageOpen}
           onClose={() => setIsImageOpen(false)}
           title={
-            imageProduct ? `Subir imagen: ${imageProduct.name}` : "Subir imagen"
+            imageProduct
+              ? `Editar imagen: ${imageProduct?.name || ""}`
+              : `Subir imagen: ${imageProduct?.name || ""}`
           }
           size="large"
+          className="max-w-4xl"
         >
           <div className="space-y-2 mb-4">
             <h4 className="text-sm font-semibold">Imágenes cargadas</h4>
@@ -1588,6 +1677,24 @@ const Admin = () => {
                           </td>
                           <td className="px-3 py-2">
                             {img.displayOrder ?? "-"}
+                          </td>
+                          <td className="px-3 py-2">
+                            {/* Edit image button */}
+                            <Button
+                              onClick={() => openEditImage(img)}
+                            >
+                              Editar
+                            </Button>
+                          </td>
+                          {/* Make button red for delete as in other places */}
+                          <td className="px-3 py-2">
+                            <Button
+                              onClick={() => deleteImage(img.id)}
+                              disabled={deletingImage}
+                              className="bg-red-600 text-white hover:bg-red-700"
+                            >
+                              {deletingImage ? "Eliminando..." : "Eliminar"}
+                            </Button>
                           </td>
                         </tr>
                       ))}
@@ -1669,11 +1776,13 @@ const Admin = () => {
                 Cancelar
               </Button>
               <Button
-                onClick={uploadImage}
+                onClick={editingImage ? editImage : uploadImage}
                 className="bg-black text-white rounded-full px-6 h-10"
                 disabled={savingImage}
               >
-                {savingImage ? "Subiendo..." : "Subir"}
+                {savingImage
+                  ? (editingImage ? "Editando..." : "Subiendo...")
+                  : (editingImage ? "Editar" : "Subir")}
               </Button>
             </div>
           </div>
