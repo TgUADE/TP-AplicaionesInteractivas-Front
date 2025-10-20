@@ -36,6 +36,7 @@ const Admin = () => {
     const start = (currentPage - 1) * pageSize;
     return products.slice(start, start + pageSize);
   }, [products, currentPage]);
+  const [pendingProductDeleteId, setPendingProductDeleteId] = useState(null);
 
   const [isImageOpen, setIsImageOpen] = useState(false);
   const [imageProduct, setImageProduct] = useState(null);
@@ -557,6 +558,7 @@ const Admin = () => {
   const deleteProduct = async (id) => {
     if (!confirm("¿Eliminar producto?")) return;
     try {
+      setPendingProductDeleteId(id);
       const res = await fetch(`${API_BASE}/products/${id}`, {
         method: "DELETE",
         headers: authHeaders,
@@ -567,6 +569,8 @@ const Admin = () => {
     } catch (e) {
       console.error(e);
       alert(e.message);
+    } finally {
+      setPendingProductDeleteId(null);
     }
   };
 
@@ -855,6 +859,7 @@ const Admin = () => {
 
       {/* Contenido principal */}
       <main className="flex-1 p-8">
+        {/* Productos */}
         {activeTab === "productos" && (
           <div className="space-y-8">
             <div className="flex items-center justify-between">
@@ -910,8 +915,14 @@ const Admin = () => {
                             <Button
                               onClick={() => deleteProduct(p.id)}
                               className="h-9 px-4 rounded-full border bg-red-600 text-white"
+                              disabled={pendingProductDeleteId === p.id}
+                              aria-busy={pendingProductDeleteId === p.id}
                             >
-                              Eliminar
+                              {pendingProductDeleteId === p.id ? (
+                                <LoadingSpinner size="small" color="white" />
+                              ) : (
+                                "Eliminar"
+                              )}
                             </Button>
                           </td>
                         </tr>
