@@ -348,10 +348,19 @@ export const useCart = () => {
 
       // Si no hay carrito, crear uno
       let currentCart = cart;
+      console.log("Current cart:", currentCart);
       if (!currentCart) {
-        currentCart = await createCart();
-        if (!currentCart) return false;
+        //Get my cart from the backend
+
+        currentCart = await getCart();
+        console.log("Current cart from backend:", currentCart);
+        if (!currentCart) {
+          currentCart = await createCart();
+          console.log("Current cart created:", currentCart);
+          if (!currentCart) return false;
+        }
       }
+      console.log("Current cart333:", currentCart);
 
       const response = await fetch(
         `${API_BASE_URL}/carts/${currentCart.id}/products`,
@@ -369,11 +378,9 @@ export const useCart = () => {
         throw new Error("Error al agregar producto al carrito");
       }
 
-      // Actualizar el carrito local
-      const updatedCart = await response.json();
-      setCart(updatedCart);
-
-      await fetchCartItems(updatedCart);
+      // La respuesta del POST devuelve el cartProduct, no el carrito completo
+      // Necesitamos refrescar el carrito completo desde el backend
+      await getCart();
       broadcastCartUpdated();
       return true;
     } catch (err) {
