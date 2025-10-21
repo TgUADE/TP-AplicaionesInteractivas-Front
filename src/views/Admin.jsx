@@ -111,6 +111,7 @@ const Admin = () => {
     1,
     Math.ceil(orders.length / ordersPageSize)
   );
+  
   const pagedOrders = useMemo(() => {
     const start = (ordersPage - 1) * ordersPageSize;
     return orders.slice(start, start + ordersPageSize);
@@ -194,7 +195,12 @@ const Admin = () => {
     try {
       const res = await fetch(`/orders`, { headers: authHeaders });
       const data = await res.json();
-      setOrders(Array.isArray(data) ? data : []);
+      const sortedData = Array.isArray(data) ? data.sort((a, b) => {
+        const dateA = new Date(a.createdAt || a.created_at);
+        const dateB = new Date(b.createdAt || b.created_at);
+        return dateB - dateA; // Most recent first
+      }) : [];
+      setOrders(sortedData);
     } catch (e) {
       console.error(e);
       alert("Error cargando órdenes");
@@ -259,7 +265,12 @@ const Admin = () => {
         headers: authHeaders,
       });
       const data = await res.json();
-      setPromotions(Array.isArray(data) ? data : []);
+      const sortedData = Array.isArray(data) ? data.sort((a, b) => {
+        const dateA = new Date(a.createdAt || a.created_at);
+        const dateB = new Date(b.createdAt || b.created_at);
+        return dateB - dateA; // Most recent first
+      }) : [];
+      setPromotions(sortedData);
     } catch (e) {
       console.error(e);
       alert("Error cargando promociones");
@@ -1391,6 +1402,7 @@ const Admin = () => {
                       </tr>
                     </thead>
                     <tbody>
+                      
                       {pagedOrders.map((o) => (
                         <tr
                           key={o.id ?? o.orderId}

@@ -20,7 +20,8 @@ const ProductFilters = ({
   sortOptions = [
     { value: 'name', label: 'Sort by Name' },
     { value: 'price-low', label: 'Price: Low to High' },
-    { value: 'price-high', label: 'Price: High to Low' }
+    { value: 'price-high', label: 'Price: High to Low' },
+    { value: 'deals', label: 'Deals' }
   ],
   
   className = ""

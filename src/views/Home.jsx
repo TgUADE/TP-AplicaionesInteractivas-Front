@@ -231,12 +231,9 @@ const Home = () => {
       <section className="py-15 bg-white w-full px-10 lg:py-10 lg:px-5 md:py-8 md:px-4">
         <div className="mb-10">
           <div className="mb-5">
-            <Link
-              to="/categories"
-              className="text-gray-800 underline font-medium text-lg"
-            >
+            <span className="text-gray-800 underline font-medium text-lg">
               Browse Categories
-            </Link>
+            </span>
           </div>
           <CategoryNav
             categories={categories}

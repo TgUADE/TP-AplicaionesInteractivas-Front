@@ -148,9 +148,12 @@ const Products = () => {
     "out of",
     products.length
   );
-
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     switch (sortBy) {
+      case "deals":
+        const aDiscount = (a.original_price || 0) - (a.current_price || 0);
+        const bDiscount = (b.original_price || 0) - (b.current_price || 0);
+        return bDiscount - aDiscount;
       case "price-low":
         return (a.current_price || 0) - (b.current_price || 0);
       case "price-high":
