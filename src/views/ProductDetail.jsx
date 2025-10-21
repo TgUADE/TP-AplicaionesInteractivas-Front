@@ -148,9 +148,15 @@ const ProductDetail = () => {
               </h1>
               <div className="flex items-center space-x-4">
                 <span className="text-4xl font-bold text-gray-900">
-                  ${(product.current_price || product.price)?.toFixed(2) || "0.00"}
+                  {`${product.current_price?.toFixed(2) || "0.00"}`}
                 </span>
-                </div>
+                {/* Show original price if there's a discount */}
+                {product.promotion && (
+                  <span className="text-2xl text-gray-500 line-through">
+                    ${product.original_price?.toFixed(2)}
+                  </span>
+                )}
+              </div>
               
               {/* Show discount badge if there's a discount */}
               {product.promotion && (
