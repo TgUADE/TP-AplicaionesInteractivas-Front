@@ -101,7 +101,7 @@ const ProductCard = ({ product, onAddToCart }) => {
       {product.promotion && (
         <div className="absolute top-0 left-0 bg-red-500 text-white px-3 py-2 rounded-tl-2xl rounded-br-xl text-sm font-bold z-20">
           {product.promotion.type === "PERCENTAGE"
-            ? `-${product.promotion.value}%`
+            ? `${product.promotion.value}%`
             : `$${product.promotion.value}`}{" "}
           off
         </div>
