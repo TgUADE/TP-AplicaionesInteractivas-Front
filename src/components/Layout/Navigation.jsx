@@ -5,20 +5,20 @@ import CartIcon from "../../icons/CartIcon";
 import HeartIcon from "../../icons/HeartIcon";
 import SearchIcon from "../../icons/SearchIcon";
 import { useCart } from "../../hook/useCart";
-import { useFavoritesContext } from "../../context/FavoritesContext";
+//import { useFavoritesContext } from "../../context/FavoritesContext";
 import { useAuth } from "../../hook/useAuth";
 
 const Navigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { cartItemCount, isLocalCart } = useCart();
-  const { favorites } = useFavoritesContext();
+  //const { favorites } = useFavoritesContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const {isAdmin} = useAuth();
+  const { isAdmin } = useAuth();
 
-  const navLinkClass = (path) => 
+  const navLinkClass = (path) =>
     `text-gray-800 no-underline font-medium text-base transition-all duration-300 py-2 relative ${
       location.pathname === path
         ? "text-primary-500 font-semibold"
@@ -41,7 +41,6 @@ const Navigation = () => {
   return (
     <nav className="bg-white shadow-lg sticky top-0 z-50 backdrop-blur-md w-full">
       <div className="w-full px-4 sm:px-6 lg:px-10 flex justify-between items-center h-16 sm:h-20">
-        
         {/* Logo - responsive */}
         <Link
           to="/home"
@@ -50,9 +49,7 @@ const Navigation = () => {
           <img
             src="/mapple-logo.png"
             alt="Mapple Logo"
-            
             className="w-16 h-16 sm:w-20 sm:h-20 object-contain"
-            
           />
           <span className="hidden sm:block">Mapple</span>
         </Link>
@@ -105,21 +102,22 @@ const Navigation = () => {
           <button className="md:hidden text-xl p-2 rounded-full hover:bg-gray-50 transition-all duration-300">
             <SearchIcon />
           </button>
-          
-          <Link
-            to="/favorites"
-            className="text-xl sm:text-2xl p-1 sm:p-2 rounded-full hover:bg-gray-50 relative transition-all duration-300"
-          >
-            <HeartIcon />
-            
-          
-          </Link>
-          <Link
-            to="/cart"
-            className="text-xl sm:text-2xl p-1 sm:p-2 rounded-full hover:bg-gray-50 relative transition-all duration-300"
-          >
-            <CartIcon itemCount={cartItemCount} isLocalCart={isLocalCart} />
-          </Link>
+          {!isAdmin && (
+            <Link
+              to="/favorites"
+              className="text-xl sm:text-2xl p-1 sm:p-2 rounded-full hover:bg-gray-50 relative transition-all duration-300"
+            >
+              <HeartIcon />
+            </Link>
+          )}
+          {!isAdmin && (
+            <Link
+              to="/cart"
+              className="text-xl sm:text-2xl p-1 sm:p-2 rounded-full hover:bg-gray-50 relative transition-all duration-300"
+            >
+              <CartIcon itemCount={cartItemCount} isLocalCart={isLocalCart} />
+            </Link>
+          )}
           <Link
             to="/profile"
             className="text-xl sm:text-2xl p-1 sm:p-2 rounded-full hover:bg-gray-50 transition-all duration-300"
@@ -128,26 +126,40 @@ const Navigation = () => {
           </Link>
 
           {/* Botón hamburguesa */}
-          <button 
+          <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="lg:hidden text-2xl p-2 transition-all duration-300"
             aria-label="Toggle menu"
           >
             <div className="w-6 h-6 flex flex-col justify-center items-center">
-              <span className={`block w-6 h-0.5 bg-gray-800 transition-all duration-300 ${isMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`}></span>
-              <span className={`block w-6 h-0.5 bg-gray-800 mt-1 transition-all duration-300 ${isMenuOpen ? 'opacity-0' : ''}`}></span>
-              <span className={`block w-6 h-0.5 bg-gray-800 mt-1 transition-all duration-300 ${isMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></span>
+              <span
+                className={`block w-6 h-0.5 bg-gray-800 transition-all duration-300 ${
+                  isMenuOpen ? "rotate-45 translate-y-1.5" : ""
+                }`}
+              ></span>
+              <span
+                className={`block w-6 h-0.5 bg-gray-800 mt-1 transition-all duration-300 ${
+                  isMenuOpen ? "opacity-0" : ""
+                }`}
+              ></span>
+              <span
+                className={`block w-6 h-0.5 bg-gray-800 mt-1 transition-all duration-300 ${
+                  isMenuOpen ? "-rotate-45 -translate-y-1.5" : ""
+                }`}
+              ></span>
             </div>
           </button>
         </div>
       </div>
 
       {/* Menú móvil desplegable */}
-      <div className={`lg:hidden transition-all duration-300 ease-in-out ${
-        isMenuOpen 
-          ? 'max-h-96 opacity-100' 
-          : 'max-h-0 opacity-0 overflow-hidden'
-      }`}>
+      <div
+        className={`lg:hidden transition-all duration-300 ease-in-out ${
+          isMenuOpen
+            ? "max-h-96 opacity-100"
+            : "max-h-0 opacity-0 overflow-hidden"
+        }`}
+      >
         <div className="px-4 py-4 bg-white border-t border-gray-100">
           {/* Búsqueda móvil expandida */}
           <div className="md:hidden mb-4">
@@ -164,12 +176,12 @@ const Navigation = () => {
               />
             </form>
           </div>
-          
+
           {/* Enlaces móviles */}
           <ul className="space-y-1">
             <li>
-              <Link 
-                to="/home" 
+              <Link
+                to="/home"
                 className="block py-3 px-2 text-gray-800 font-medium hover:bg-gray-50 rounded-lg transition-all duration-300"
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -177,8 +189,8 @@ const Navigation = () => {
               </Link>
             </li>
             <li>
-              <Link 
-                to="/products" 
+              <Link
+                to="/products"
                 className="block py-3 px-2 text-gray-800 font-medium hover:bg-gray-50 rounded-lg transition-all duration-300"
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -186,8 +198,8 @@ const Navigation = () => {
               </Link>
             </li>
             <li>
-              <Link 
-                to="/contact" 
+              <Link
+                to="/contact"
                 className="block py-3 px-2 text-gray-800 font-medium hover:bg-gray-50 rounded-lg transition-all duration-300"
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -196,8 +208,8 @@ const Navigation = () => {
             </li>
             {isAdmin && (
               <li>
-                <Link 
-                  to="/admin" 
+                <Link
+                  to="/admin"
                   className="block py-3 px-2 text-gray-800 font-medium hover:bg-gray-50 rounded-lg transition-all duration-300"
                   onClick={() => setIsMenuOpen(false)}
                 >

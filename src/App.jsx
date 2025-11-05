@@ -13,13 +13,18 @@ import Profile from "./views/Profile";
 import Cart from "./views/Cart";
 import Favorites from "./views/Favorites";
 import RequireAdmin from "./components/RouteGuards/RequireAdmin";
-import Admin from "./views/Admin";
+import AdminLayout from "./components/Admin/AdminLayout";
+import ProductsAdmin from "./views/Admin/ProductsAdmin";
+import PromotionsAdmin from "./views/Admin/PromotionsAdmin";
+import CategoriesAdmin from "./views/Admin/CategoriesAdmin";
+import UsersAdmin from "./views/Admin/UsersAdmin";
+import OrdersAdmin from "./views/Admin/OrdersAdmin";
 
 function App() {
   // Ejecutar useUserProfile a nivel de app para que siempre cargue el perfil
   // y dispare el evento profile_loaded que sincroniza isAdmin automáticamente
   useUserProfile();
-  
+
   return (
     <FavoritesProvider>
       <ScrollToTop />
@@ -34,7 +39,21 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/favorites" element={<Favorites />} />
-        <Route path="/admin" element={<RequireAdmin><Admin /></RequireAdmin>} />
+        <Route
+          path="/admin"
+          element={
+            <RequireAdmin>
+              <AdminLayout />
+            </RequireAdmin>
+          }
+        >
+          <Route index element={<Navigate to="products" replace />} />
+          <Route path="products" element={<ProductsAdmin />} />
+          <Route path="promotions" element={<PromotionsAdmin />} />
+          <Route path="categories" element={<CategoriesAdmin />} />
+          <Route path="users" element={<UsersAdmin />} />
+          <Route path="orders" element={<OrdersAdmin />} />
+        </Route>
       </Routes>
       <Footer />
     </FavoritesProvider>
