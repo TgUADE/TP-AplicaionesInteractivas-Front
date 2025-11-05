@@ -1,49 +1,69 @@
-import { useState, useEffect, useCallback } from "react";
-
-const URLPromotions = "/api/products/on-sale";
-const options = {
-  method: "GET",
-  headers: {
-    "Content-Type": "application/json",
-  },
-};
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchPromotions} from "../redux/slices/promotionSlice.js";
+import { productsOnSale } from "../redux/slices/promotionSlice.js";
 
 export const usePromotions = () => {
-  const [promotionalProducts, setPromotionalProducts] = useState([]);
+  const dispatch = useDispatch();
+  const [promotions, setPromotions] = useState([]);
   const [isLoadingPromotions, setIsLoadingPromotions] = useState(true);
+  const {items, error, loading}=useSelector(state=>state.promotions);
+  const {items: saleItems, error: saleError, loading: saleLoading}=useSelector(state=>state.productsOnSale);
+  const [promotionalProducts, setPromotionalProducts] = useState([]);
 
-  const fetchPromotionalProducts = useCallback(async () => {
-    try {
-      setIsLoadingPromotions(true);
-      const response = await fetch(URLPromotions, options);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      setPromotionalProducts(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Error fetching promotional products:", error);
-      setPromotionalProducts([]);
-    } finally {
-      setIsLoadingPromotions(false);
+  // Fetch promotions
+  useEffect(() => {
+    dispatch(fetchPromotions());
+  }, [dispatch]);
+  // Success fetch promotions
+  useEffect(() => {
+    if (items.length > 0) {
+      setPromotions(items);
     }
-  }, []);
-
-  // Fetch promotional products
+  }, [items]);
+  // Loading state
   useEffect(() => {
-    fetchPromotionalProducts();
-  }, [fetchPromotionalProducts]);
-
-  // Escuchar eventos para refrescar cuando admin cambie promociones
+    setIsLoadingPromotions(loading);
+  }, [loading]);
+  // Error state
   useEffect(() => {
-    const handler = () => fetchPromotionalProducts();
-    window.addEventListener("promotions_updated", handler);
-    return () => window.removeEventListener("promotions_updated", handler);
-  }, [fetchPromotionalProducts]);
+    if (error) {
+      console.error("Error fetching promotions:", error);
+    }
+
+  }, [error]);
+
+  // Fetch products on sale
+  useEffect(() => {
+    dispatch(productsOnSale());
+  }, [dispatch]);
+  // Success fetch products on sale
+  useEffect(() => {
+    if (saleItems.length > 0) {
+      setPromotionalProducts(saleItems);
+    }
+  }, [saleItems]);
+  // Error state for products on sale
+  useEffect(() => {
+    if (saleError) {
+      console.error("Error fetching products on sale:", saleError);
+    }
+  }, [saleError]);
+  // Loading state for products on sale
+  useEffect(() => {
+    setIsLoadingPromotions(saleLoading);
+  }, [saleLoading]);
+
+
+
 
   return {
+    promotions,
     promotionalProducts,
     isLoadingPromotions,
-    refreshPromotions: fetchPromotionalProducts,
+    error,
+    saleError,
+    saleLoading,
   };
 };
+

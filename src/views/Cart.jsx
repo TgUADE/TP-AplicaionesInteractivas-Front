@@ -5,7 +5,6 @@ import { useProducts } from "../hook/useProducts";
 import { useAuth } from "../hook/useAuth";
 import LoadingSpinner from "../components/UI/LoadingSpinner";
 import Button from "../components/UI/Button";
-import Modal from "../components/UI/Modal";
 import useOrder from "../hook/useOrder";
 import EmptyCart from "../components/Cart/EmptyCart";
 import CartProducts from "../components/Cart/CartProducts";

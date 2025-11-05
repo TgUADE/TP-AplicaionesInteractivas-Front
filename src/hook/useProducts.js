@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
+import { useDispatch , useSelector } from "react-redux";
+import { fetchProducts } from "../redux/slices/productSlice.js";
 
-const URLproducts = "/api/products";
 const URLcategories = "/api/categories";
 const options = {
   method: "GET",
@@ -15,29 +16,36 @@ export const useProducts = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [productsLoaded, setProductsLoaded] = useState(false);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  const dispatch = useDispatch();
+  const {items, error, loading}=useSelector(state=>state.products);
 
   // Fetch products
   useEffect(() => {
-    let isMounted = true;
+    dispatch(fetchProducts());
+  }, [dispatch]);
 
-    fetch(URLproducts, options)
-      .then((response) => response.json())
-      .then((data) => {
-        if (isMounted) {
-          setProducts(data);
-          setProductsLoaded(true);
-          console.log("Products loaded:", data);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching products:", error);
-        setProductsLoaded(true);
-      });
+  // Success fetch products
+  useEffect(() => {
+    if (items.length > 0) {
+      setProducts(items);
+      setProductsLoaded(true);
+    }
+  }, [items]);
+  // Error fetch products
+  useEffect(() => {
+    if (error) {
+      console.error("Error fetching products:", error);
+    }
+  }, [error]);
+  // Loading state
+  useEffect(() => {
+    if (loading) {
+      setIsLoading(true);
+    } else {
+      setIsLoading(false);
+    }
+  }, [loading]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   // Fetch categories
   useEffect(() => {

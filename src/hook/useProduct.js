@@ -1,57 +1,43 @@
 import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchProductById } from "../redux/slices/productSlice.js";
 
 export const useProduct = (productId) => {
   const [product, setProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const productDetail = useSelector(state => state.productDetail);
+  const { item, error, loading } = productDetail || { item: null, error: null, loading: false };
 
+  // Fetch product by ID
   useEffect(() => {
-    if (!productId) {
-      setIsLoading(false);
-      return;
+    if (productId) {
+      dispatch(fetchProductById(productId));
+    } else {
     }
+  }, [dispatch, productId]);
 
-    let isMounted = true;
-    setIsLoading(true);
-    setError(null);
+  // Success fetch product by ID
+  useEffect(() => {
+    if (item) {
+      setProduct(item);
+      setIsLoading(false);
+    } else if (!loading && !item) {
+      setIsLoading(false);
+    }
+  }, [item, loading]);
 
-    const fetchProduct = async () => {
-      try {
-        const response = await fetch(`/api/products/${productId}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+  // Loading state
+  useEffect(() => {
+    setIsLoading(loading);
+  }, [loading]);
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        
-        if (isMounted) {
-          setProduct(data);
-          console.log("Product loaded:", data);
-        }
-      } catch (error) {
-        console.error("Error fetching product:", error);
-        if (isMounted) {
-          setError(error.message);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchProduct();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [productId]);
+  // Error state
+  useEffect(() => {
+    if (error) {
+      setIsLoading(false);
+    }
+  }, [error]);
 
   return {
     product,
