@@ -34,7 +34,7 @@ const Products = () => {
     }
   };
 
-  // Set initial category and search from URL parameters
+
   useEffect(() => {
     const categoryFromUrl = searchParams.get("category");
     const searchFromUrl = searchParams.get("search");

@@ -1,10 +1,7 @@
 import { useState } from "react";
-import Input from "../components/UI/Input";
-import Button from "../components/UI/Button";
-import LockIcon from "../icons/LockIcon";
-import MailIcon from "../icons/MailIcon";
 import { useAuth } from "../hook/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
+import AuthForm from "../components/Auth/AuthForm";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -35,7 +32,7 @@ const Auth = () => {
         // login() automáticamente recarga la página después de 500ms
         await login(data.access_token);
         
-        // La navegación ya no es necesaria - login() recarga la página automáticamente
+        
       } else {
         alert("Login failed: " + (data.message || "Unknown error"));
       }
@@ -96,78 +93,22 @@ const Auth = () => {
       <div className="w-full max-w-md mx-auto">
         <div className="text-center mb-12">
           <p className="text-gray-500 text-2xl font-normal">
-            {isLogin ? "Sign In to Mapple Store" : "Sign In to Mapple Store"}
+            {isLogin ? "Sign In to Mapple Store" : "Create Account for Mapple Store"}
           </p>
         </div>
-
-        <form
-          className="space-y-6"
-          onSubmit={isLogin ? handleLogin : handleRegister}
-        >
-          {!isLogin && (
-            <>
-              <div className="relative">
-                <Input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="First Name"
-                  className="w-full h-14 px-6 rounded-full border-2 border-gray-300 bg-white focus:bg-white focus:border-gray-400 focus:ring-0 text-base placeholder-gray-400"
-                  required
-                />
-              </div>
-              <div className="relative">
-                <Input
-                  type="text"
-                  value={surname}
-                  onChange={(e) => setSurname(e.target.value)}
-                  placeholder="Last Name"
-                  className="w-full h-14 px-6 rounded-full border-2 border-gray-300 bg-white focus:bg-white focus:border-gray-400 focus:ring-0 text-base placeholder-gray-400"
-                  required
-                />
-              </div>
-            </>
-          )}
-
-          {/* Email field second (as shown in image) */}
-          <div className="relative">
-            <div className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400 text-base">
-              <MailIcon />
-            </div>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email Address"
-              className="w-full h-14 pl-14 pr-6 rounded-full border-2 border-gray-300 bg-white focus:bg-white focus:border-gray-400 focus:ring-0 text-base placeholder-gray-400"
-              required
-            />
-          </div>
-          {/* Password field first (as shown in image) */}
-          <div className="relative">
-            <div className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400 text-base">
-              <LockIcon />
-            </div>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              className="w-full h-14 pl-14 pr-6 rounded-full border-2 border-gray-300 bg-white focus:bg-white focus:border-gray-400 focus:ring-0 text-base placeholder-gray-400"
-              required
-            />
-          </div>
-
-          <div className="pt-6">
-            <Button
-              type="submit"
-              className="w-full h-14 bg-black text-white rounded-full hover:bg-gray-800 text-base font-medium"
-            >
-              {isLogin ? "Login" : "Create Account"}
-            </Button>
-          </div>
-        </form>
-
+        <AuthForm
+          isLogin={isLogin}
+          email={email}
+          setEmail={setEmail}
+          password={password}
+          setPassword={setPassword}
+          name={name}
+          setName={setName}
+          surname={surname}
+          setSurname={setSurname}
+          handleLogin={handleLogin}
+          handleRegister={handleRegister}
+        />
         <div className="text-center mt-8">
           <p className="text-base text-gray-600">
             {isLogin ? "Don't have an account? " : "Already have an account? "}

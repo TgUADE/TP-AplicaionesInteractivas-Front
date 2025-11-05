@@ -4,9 +4,11 @@ import { useProduct } from "../hook/useProduct";
 import { useCart } from "../hook/useCart";
 import { useFavoritesContext } from "../context/FavoritesContext";
 import { useAuth } from "../hook/useAuth";
-import HeartIcon from "../icons/HeartIcon";
 import LoadingSpinner from "../components/UI/LoadingSpinner";
-
+import ProductDetailImages from "../components/Product/PorductDetail/ProductDetailImages";
+import ProductDetailInfo from "../components/Product/PorductDetail/ProductDetailInfo";
+import ProductDetailButtons from "../components/Product/PorductDetail/ProductDetailButtons";
+import ProductDetailQuantitySelector from "../components/Product/PorductDetail/ProductDetailQuantitySelector";
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -73,9 +75,6 @@ const ProductDetail = () => {
     return null;
   };
 
-  const getCurrentPrice = () => {
-    return storageOptions[selectedStorage]?.price || product.currentPrice || product.price;
-  };
 
   const handleAddToCart = () => {
     addToCart(product.id, quantity);
@@ -100,138 +99,35 @@ const ProductDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           
           {/* Left Side - Images */}
-          <div className="space-y-4">
-            {/* Main Image */}
-            <div className="aspect-square bg-gray-50 rounded-2xl p-8 flex items-center justify-center">
-              {getCurrentImage() ? (
-                <img
-                  src={getCurrentImage()}
-                  alt={product.name}
-                  className="max-w-full max-h-full object-contain"
-                />
-              ) : (
-                <div className="text-gray-400 text-6xl">📱</div>
-              )}
-            </div>
-
-            {/* Thumbnail Images */}
-            {sortedImages.length > 1 && (
-              <div className="flex space-x-4 overflow-x-auto">
-                {sortedImages.map((image, index) => (
-                  <button
-                    key={image.id || index}
-                    onClick={() => setSelectedImageIndex(index)}
-                    className={`flex-shrink-0 w-20 h-20 bg-gray-50 rounded-lg border-2 p-2 transition-all duration-300 ${
-                      selectedImageIndex === index 
-                        ? 'border-blue-500' 
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <img
-                      src={image.imageUrl}
-                      alt={`${product.name} ${index + 1}`}
-                      className="w-full h-full object-contain"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <ProductDetailImages
+            product={product}
+            selectedImageIndex={selectedImageIndex}
+            setSelectedImageIndex={setSelectedImageIndex}
+            sortedImages={sortedImages}
+            getCurrentImage={getCurrentImage}
+          />
 
           {/* Right Side - Product Info */}
-          <div className="space-y-6">
+          <div className="space-y-8">
             
-            {/* Product Title and Price */}
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                {product.name}
-              </h1>
-              <div className="flex items-center space-x-4">
-                <span className="text-4xl font-bold text-gray-900">
-                  {`${product.current_price?.toFixed(2) || "0.00"}`}
-                </span>
-                {/* Show original price if there's a discount */}
-                {product.promotion && (
-                  <span className="text-2xl text-gray-500 line-through">
-                    ${product.original_price?.toFixed(2)}
-                  </span>
-                )}
-              </div>
-              
-              {/* Show discount badge if there's a discount */}
-              {product.promotion && (
-                <div className="mt-2">
-                  <span className="inline-block bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">
-                    {product.promotion.type === "PERCENTAGE"
-                      ? `${product.promotion.value}% OFF`
-                      : `$${product.promotion.value} OFF`}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            
-
-        
-
-            
-
-            {/* Product Description */}
-            <div>
-              <p className="text-gray-700 leading-relaxed">
-                {product.description}
-              </p>
-            </div>
+            {/* Product Info */}
+            <ProductDetailInfo product={product} />
 
             {/* Quantity and Actions */}
-            <div className="space-y-4">
-              {/* Quantity Selector */}
-              <div className="flex items-center space-x-4">
-                <span className="text-sm font-medium text-gray-900">Quantity:</span>
-                <div className="flex items-center border border-gray-300 rounded-lg">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-3 py-2 text-gray-600 hover:text-gray-800"
-                  >
-                    -
-                  </button>
-                  <span className="px-4 py-2 border-l border-r border-gray-300">
-                    {quantity}
-                  </span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="px-3 py-2 text-gray-600 hover:text-gray-800"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+            <ProductDetailQuantitySelector
+              quantity={quantity}
+              setQuantity={setQuantity}
+            />
 
+              
               {/* Action Buttons */}
-              <div className="flex space-x-4">
-                <button
-                  onClick={handleAddToFavorites}
-                  disabled={favLoading}
-                  className={`flex-1 border-2 px-6 py-4 rounded-lg font-medium transition-all duration-300 flex items-center justify-center space-x-2 ${
-                    isFavorite(product?.id) 
-                      ? 'bg-red-50 text-red-600 border-red-300 hover:border-red-500' 
-                      : 'bg-white text-gray-800 border-gray-300 hover:border-gray-800'
-                  }`}
-                >
-                  <HeartIcon filled={isFavorite(product?.id)} />
-                  <span>{isFavorite(product?.id) ? 'Remove from Favorites' : 'Add to Favorites'}</span>
-                </button>
-                <button
-                  onClick={handleAddToCart}
-                  className="flex-1 bg-black text-white px-6 py-4 rounded-lg font-medium transition-all duration-300 hover:bg-gray-800"
-                >
-                  Add to Cart
-                </button>
-              </div>
-            </div>
-
-            
-
+                <ProductDetailButtons
+                  handleAddToCart={handleAddToCart}
+                  handleAddToFavorites={handleAddToFavorites}
+                  isFavorite={isFavorite}
+                  favLoading={favLoading}
+                  product={product}
+                />
           </div>
         </div>
       </div>
