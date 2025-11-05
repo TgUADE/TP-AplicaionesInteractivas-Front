@@ -6,9 +6,8 @@ export const fetchProducts= createAsyncThunk("products/fetchProducts", async () 
     return data;
 });
 
-
-export const createProduct= createAsyncThunk("products/createProduct", async (productData) => {
-    const {data}= await axios.post("/api/products", productData);
+export const fetchProductById= createAsyncThunk("products/fetchProductById", async (productId) => {
+    const {data}= await axios.get(`/api/products/${productId}`);
     return data;
 });
 
@@ -63,6 +62,7 @@ const productIDSlice = createSlice({
             });
     },
 });
+
 
 
 
