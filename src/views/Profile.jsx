@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../hook/useAuth";
 import { useUserProfile } from "../hook/useUserProfile";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { clearUserProfile } from "../redux/slices/userSlice";
 import LoadingSpinner from "../components/UI/LoadingSpinner";
 import ProfileIconAndMail from "../components/Profile/ProfileIconAndMail";
 import ProfileForm from "../components/Profile/ProfileForm";
@@ -10,6 +12,7 @@ const Profile = () => {
   const { isLoggedIn, logout, isInitialized } = useAuth();
   const { profile, isLoading, error, isInitialized: profileInitialized, updateProfile, deleteAccount } = useUserProfile();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState({});
 
@@ -27,12 +30,12 @@ const Profile = () => {
   }, [isLoggedIn, isInitialized, navigate]);
 
   const handleLogout = () => {
-    // Navegar inmediatamente antes de hacer logout para evitar ver el perfil vacío
+    // Limpiar perfil de Redux primero
+    dispatch(clearUserProfile());
+    // Hacer logout
+    logout();
+    // Navegar a home
     navigate("/home");
-    // Logout se ejecuta después de navegar
-    setTimeout(() => {
-      logout();
-    }, 50);
   };
 
   const handleEdit = (e) => {
@@ -56,19 +59,29 @@ const Profile = () => {
       e.stopPropagation();
     }
     console.log("💾 Saving profile changes");
-    const success = await updateProfile(editedData);
-    if (success) {
+    
+    try {
+      await updateProfile(editedData);
       setIsEditing(false);
+      console.log("✅ Profile updated successfully");
+    } catch (error) {
+      console.error("❌ Error updating profile:", error);
+      alert("Error updating profile. Please try again.");
     }
   };
 
   const handleDeleteAccount = async () => {
     if (window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
-      const success = await deleteAccount();
-      if (success) {
+      try {
+        await deleteAccount();
+        // Limpiar perfil de Redux
+        dispatch(clearUserProfile());
+        // Hacer logout y navegar
         logout();
         navigate("/home");
-      } else {
+        console.log("✅ Account deleted successfully");
+      } catch (error) {
+        console.error("❌ Error deleting account:", error);
         alert("Error deleting account. Please try again.");
       }
     }
@@ -96,7 +109,6 @@ const Profile = () => {
     return (
       <div className="min-h-screen bg-white w-full flex items-center justify-center">
         <div className="text-center">
-          
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Error loading profile</h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <button

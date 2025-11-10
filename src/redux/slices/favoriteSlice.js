@@ -49,7 +49,7 @@ const favoriteSlice = createSlice({
                 state.error = action.error.message;
             })
             
-        // Builder 2: Toggle favorite (mismo builder, diferentes cases)
+        // Builder 2: Toggle favorite 
             .addCase(toggleFavorite.pending, (state) => {
                 console.log('favoriteSlice - toggleFavorite pending');
                 state.loading = true;

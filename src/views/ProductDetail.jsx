@@ -77,7 +77,7 @@ const ProductDetail = () => {
 
 
   const handleAddToCart = () => {
-    addToCart(product.id, quantity);
+    addToCart(product, quantity);
   };
 
   const handleAddToFavorites = async () => {

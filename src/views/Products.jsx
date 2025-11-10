@@ -26,7 +26,7 @@ const Products = () => {
   const { addToCart } = useCart();
 
   const handleAddToCart = async (product) => {
-    const success = await addToCart(product.id, 1);
+    const success = await addToCart(product, 1);
     if (success) {
       console.log(`Producto ${product.name} agregado al carrito`);
     } else {

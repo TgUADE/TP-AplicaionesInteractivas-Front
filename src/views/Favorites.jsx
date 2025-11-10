@@ -21,7 +21,7 @@ const Favorites = () => {
 
 
   const handleAddToCart = (product) => {
-    addToCart(product.id, 1);
+    addToCart(product, 1);
   };
 
   // Show loading while auth is initializing

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../hook/useAuth";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import AuthForm from "../components/Auth/AuthForm";
 
 const Auth = () => {
@@ -8,73 +8,40 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
-  const [isLogin, setIsLogin] = useState(true); // true for login, false for register
-  const { login, isLoggedIn, token } = useAuth();
+  const [isLogin, setIsLogin] = useState(true);
+  const { login, register, isLoading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
     try {
-      const response = await fetch("/api/v1/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Usar el hook para guardar el token en localStorage
-        // login() automáticamente recarga la página después de 500ms
-        await login(data.access_token);
-        
-        
-      } else {
-        alert("Login failed: " + (data.message || "Unknown error"));
-      }
+      console.log("🔐 Attempting login...");
+      await login({ email, password });
+      console.log("✅ Login successful, redirecting...");
+      navigate("/home");
     } catch (error) {
-      alert("Network error: " + error.message);
+      console.error("❌ Login error:", error);
+      alert("Login failed: " + (error.message || "Unknown error"));
     }
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
 
+    if (!name || !surname || !email || !password) {
+      alert("Please fill in all fields");
+      return;
+    }
+
     try {
-      console.log("Making POST request to register API...");
-      const response = await fetch("/api/v1/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, surname, email, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert("Registration successful! You can now login.");
-        setIsLogin(true); // Switch to login mode after successful registration
-      } else {
-        // Show detailed validation errors if available
-        if (data.errors && Array.isArray(data.errors)) {
-          const errorMessages = data.errors
-            .map(
-              (error) =>
-                `${error.field}: ${error.defaultMessage || error.message}`
-            )
-            .join("\n");
-          alert("Registration failed:\n" + errorMessages);
-        } else {
-          alert("Registration failed: " + (data.message || "Unknown error"));
-        }
-      }
+      console.log("📝 Attempting registration...");
+      await register({ name, surname, email, password });
+      console.log("✅ Registration successful, redirecting...");
+      navigate("/home");
     } catch (error) {
-      alert("Network error: " + error.message);
+      console.error("❌ Registration error:", error);
+      alert("Registration failed: " + (error.message || "Unknown error"));
     }
   };
 
@@ -108,6 +75,7 @@ const Auth = () => {
           setSurname={setSurname}
           handleLogin={handleLogin}
           handleRegister={handleRegister}
+          isLoading={isLoading}
         />
         <div className="text-center mt-8">
           <p className="text-base text-gray-600">
