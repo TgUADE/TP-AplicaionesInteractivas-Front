@@ -21,10 +21,10 @@ function acquireWindowLock(key) {
     w.__locks.add(key);
     return true;
   } catch {
-    // si window no está disponible por algún motivo, no bloquear
     return true;
   }
 }
+
 function releaseWindowLock(key) {
   try {
     const w = window;
@@ -98,16 +98,13 @@ export const useCart = () => {
           );
 
           if (response.ok) {
-            console.log(`✅ Producto ${item.productId} agregado correctamente`);
+            console.log(`✅ Producto ${item.productId} agregado exitosamente`);
             successCount++;
           } else {
             console.error(
               `❌ Error agregando producto ${item.productId}:`,
-              response.status,
-              response.statusText
+              response.status
             );
-            const errorText = await response.text();
-            console.error("Error details:", errorText);
             errorCount++;
           }
         } catch (itemError) {
@@ -118,7 +115,6 @@ export const useCart = () => {
           errorCount++;
         }
 
-        // Pequeña pausa entre requests para evitar problemas de concurrencia
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
@@ -126,7 +122,6 @@ export const useCart = () => {
         `Sincronización completada: ${successCount} exitosos, ${errorCount} errores`
       );
 
-      // Limpiar carrito local solo si al menos algunos productos se sincronizaron
       if (successCount > 0) {
         clearLocalCart();
         console.log("Carrito local limpiado");
@@ -161,7 +156,7 @@ export const useCart = () => {
 
     if (creatingCartRef.current) {
       console.log("⏳ createCart en progreso, evitando duplicado");
-      return cart; // devolver el actual si existe
+      return cart;
     }
 
     try {
@@ -216,63 +211,23 @@ export const useCart = () => {
         const localItems = loadLocalCart();
 
         if (localItems.length > 0) {
-          // Evitar doble creación desde otro componente/useCart (Header, Cart, etc.)
           if (!acquireWindowLock("__cartCreateLock")) {
-            console.log(
-              "⏳ Otro componente creando carrito; esperando y reintentando..."
-            );
-            await new Promise((r) => setTimeout(r, 500));
-            setIsGettingCart(false);
-            return await getCart();
+            console.log("⏳ Otro proceso está creando el carrito");
+            return null;
           }
 
           try {
-            console.log(
-              "🧰 404 sin carrito. Creando y sincronizando items locales..."
-            );
             const newCart = await createCart();
             if (newCart) {
               await syncLocalItemsToCart(newCart, localItems);
-
-              // Refrescar desde backend para obtener productos y totales correctos
-              const refetch = await fetch(`${API_BASE_URL}/carts/my-carts`, {
-                method: "GET",
-                headers,
-              });
-
-              if (refetch.ok) {
-                const cartData = await refetch.json();
-                const userCart = Array.isArray(cartData)
-                  ? cartData[0]
-                  : cartData;
-
-                if (userCart) {
-                  setCart(userCart);
-                  const items = (userCart.cartProducts || [])
-                    .map((product) => ({
-                      productId: product?.product?.id,
-                      quantity: product.quantity,
-                      name: product?.product?.name,
-                      price: product?.product?.price,
-                    }))
-                    .filter((item) => item.productId !== null);
-
-                  setCartItems(items);
-                  return userCart;
-                }
-              }
-
-              // Fallback si no pudimos refetchear
-              setCart(newCart);
-              await fetchCartItems(newCart);
-              return newCart;
+              await getCart();
             }
+            return newCart;
           } finally {
             releaseWindowLock("__cartCreateLock");
           }
         }
 
-        // Sin items locales → no crear carrito vacío
         setCart(null);
         setCartItems([]);
         return null;
@@ -303,11 +258,15 @@ export const useCart = () => {
       setCart(userCart);
 
       const items = (userCart.cartProducts || [])
-        .map((product) => ({
-          productId: product?.product?.id,
-          quantity: product.quantity,
-          name: product?.product?.name,
-          price: product?.product?.price,
+        .map((cp) => ({
+          productId: cp.product?.id,
+          quantity: cp.quantity,
+          name: cp.product?.name,
+          price: cp.product?.current_price || cp.product?.price,
+          original_price: cp.product?.original_price,
+          promotion: cp.product?.promotion,
+          images: cp.product?.images,
+          product: cp.product, // Guardar el producto completo
         }))
         .filter((item) => item.productId !== null);
 
@@ -322,8 +281,17 @@ export const useCart = () => {
     }
   };
 
-  // Agregar producto al carrito
-  const addToCart = async (productId, quantity = 1) => {
+  // Agregar producto al carrito - Acepta producto completo o solo ID
+  const addToCart = async (productOrId, quantity = 1) => {
+    // Determinar si recibimos un producto completo o solo un ID
+    const isProductObject = typeof productOrId === 'object' && productOrId !== null;
+    const productId = isProductObject ? productOrId.id : productOrId;
+    
+    if (!productId) {
+      console.error("Product ID is required");
+      return false;
+    }
+
     if (!isLoggedIn) {
       // Si no está logueado, agregar al carrito local
       const localItems = loadLocalCart();
@@ -334,7 +302,21 @@ export const useCart = () => {
       if (existingItem) {
         existingItem.quantity += quantity;
       } else {
-        localItems.push({ productId, quantity });
+        // Guardar información completa del producto si está disponible
+        const newItem = isProductObject ? {
+          productId,
+          quantity,
+          name: productOrId.name,
+          price: productOrId.current_price || productOrId.price,
+          original_price: productOrId.original_price,
+          promotion: productOrId.promotion,
+          images: productOrId.images,
+          product: productOrId,
+        } : {
+          productId,
+          quantity,
+        };
+        localItems.push(newItem);
       }
 
       saveLocalCart(localItems);
@@ -350,8 +332,6 @@ export const useCart = () => {
       let currentCart = cart;
       console.log("Current cart:", currentCart);
       if (!currentCart) {
-        //Get my cart from the backend
-
         currentCart = await getCart();
         console.log("Current cart from backend:", currentCart);
         if (!currentCart) {
@@ -360,7 +340,8 @@ export const useCart = () => {
           if (!currentCart) return false;
         }
       }
-      console.log("Current cart333:", currentCart);
+
+      console.log("Adding product to cart:", { productId, quantity, cartId: currentCart.id });
 
       const response = await fetch(
         `${API_BASE_URL}/carts/${currentCart.id}/products`,
@@ -375,15 +356,17 @@ export const useCart = () => {
       );
 
       if (!response.ok) {
-        throw new Error("Error al agregar producto al carrito");
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        throw new Error(`Error al agregar producto al carrito: ${response.status} - ${errorText}`);
       }
 
-      // La respuesta del POST devuelve el cartProduct, no el carrito completo
-      // Necesitamos refrescar el carrito completo desde el backend
+      // Refrescar el carrito completo desde el backend
       await getCart();
       broadcastCartUpdated();
       return true;
     } catch (err) {
+      console.error("Error in addToCart:", err);
       setError(err.message);
       return false;
     } finally {
@@ -407,14 +390,13 @@ export const useCart = () => {
           );
           saveLocalCart(filteredItems);
           setCartItems(filteredItems);
-          broadcastCartUpdated();
         } else {
           existingItem.quantity = quantity;
           saveLocalCart(localItems);
           setCartItems(localItems);
-          broadcastCartUpdated();
         }
       }
+      broadcastCartUpdated();
       return true;
     }
 
@@ -496,6 +478,7 @@ export const useCart = () => {
     if (!isLoggedIn) {
       clearLocalCart();
       setCartItems([]);
+      broadcastCartUpdated();
       return true;
     }
 
@@ -506,32 +489,7 @@ export const useCart = () => {
       if (cartItems.length > 0) {
         console.log("Limpiando carrito en el backend");
         for (const item of cartItems) {
-          try {
-            const response = await fetch(
-              `${API_BASE_URL}/carts/${cart.id}/product/${item.productId}`,
-              {
-                method: "DELETE",
-                headers,
-              }
-            );
-            if (!response.ok) {
-              console.error(
-                `Error elimnando producto ${item.productId}`,
-                response.status,
-                response.statusText
-              );
-            } else {
-              console.log(
-                `✅ Producto ${item.productId} eliminado correctamente`
-              );
-            }
-          } catch (itemError) {
-            console.error(
-              `Error eliminando producto ${item.productId}`,
-              itemError
-            );
-          }
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          await removeFromCart(item.productId);
         }
       }
       const response = await fetch(`${API_BASE_URL}/carts/${cart.id}`, {
@@ -563,6 +521,12 @@ export const useCart = () => {
           .map((cp) => ({
             productId: cp.product?.id,
             quantity: cp.quantity,
+            name: cp.product?.name,
+            price: cp.product?.current_price || cp.product?.price,
+            original_price: cp.product?.original_price,
+            promotion: cp.product?.promotion,
+            images: cp.product?.images,
+            product: cp.product,
           }))
           .filter((it) => !!it.productId);
         setCartItems(items);
@@ -587,12 +551,10 @@ export const useCart = () => {
 
   // Cargar carrito cuando cambia el estado de autenticación
   useEffect(() => {
-    // Esperar a que la autenticación esté inicializada
     if (!authInitialized) {
       return;
     }
 
-    // Evitar cargar múltiples veces
     if (hasLoadedRef.current && isInitialized) {
       console.log("⚡ useCart ya inicializado, usando cache");
       return;
@@ -628,16 +590,13 @@ export const useCart = () => {
   }, [authInitialized, isLoggedIn, token]);
 
   // Listener para eventos de actualización del carrito
-  // Listener para eventos de actualización del carrito
   useEffect(() => {
     const handler = async () => {
       if (isLoggedIn && token) {
         if (!isLoading && !isGettingCart) {
-          console.log("🔄 Evento CART_UPDATED recibido");
           await getCart();
         }
       } else {
-        // Invitado: refrescar desde localStorage para que Header/Cart se actualicen al instante
         const localItems = loadLocalCart();
         setCartItems(localItems);
       }
@@ -678,138 +637,17 @@ export const useCart = () => {
       if (newToken && !isGettingCart) {
         console.log("📦 Token recibido del evento, cargando carrito...");
 
-        // Reset el flag para permitir la carga
         hasLoadedRef.current = false;
 
-        // Cargar items locales primero
         const localItems = loadLocalCart();
         console.log("Items locales encontrados:", localItems.length);
 
         try {
-          setIsLoading(true);
-          setIsGettingCart(true);
-
-          // Obtener carrito del backend con el token del evento
-          const headersWithToken = {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${newToken}`,
-          };
-
-          const response = await fetch(`${API_BASE_URL}/carts/my-carts`, {
-            method: "GET",
-            headers: headersWithToken,
-          });
-
-          if (response.status === 404) {
-            console.log("No hay carrito, evaluando creación...");
-            if (localItems.length > 0) {
-              if (!acquireWindowLock("__cartCreateLock")) {
-                console.log(
-                  "⏳ Otro componente creando carrito; esperando y reintentando..."
-                );
-                await new Promise((r) => setTimeout(r, 500));
-                await getCart();
-                return null;
-              }
-              try {
-                console.log("Creando carrito y sincronizando items locales...");
-                const createResponse = await fetch(`${API_BASE_URL}/carts`, {
-                  method: "POST",
-                  headers: headersWithToken,
-                  body: JSON.stringify({ productIds: [] }),
-                });
-
-                if (createResponse.ok) {
-                  const newCart = await createResponse.json();
-                  setCart(newCart);
-
-                  await syncLocalItemsToCart(newCart, localItems);
-                  setIsGettingCart(false);
-                  await getCart();
-                }
-              } finally {
-                releaseWindowLock("__cartCreateLock");
-              }
-            } else {
-              setCart(null);
-              setCartItems([]);
-              return null;
-            }
-          } else if (response.ok) {
-            const cartData = await response.json();
-            const userCart = Array.isArray(cartData) ? cartData[0] : cartData;
-
-            if (userCart) {
-              setCart(userCart);
-
-              const items = (userCart.cartProducts || [])
-                .map((product) => ({
-                  productId: product?.product?.id,
-                  quantity: product.quantity,
-                  name: product?.product?.name,
-                  price: product?.product?.price,
-                }))
-                .filter((item) => item.productId !== null);
-
-              setCartItems(items);
-              console.log(
-                "✅ Carrito cargado desde login:",
-                items.length,
-                "items"
-              );
-
-              // Sincronizar items locales si hay
-              if (localItems.length > 0) {
-                console.log(
-                  "Sincronizando items locales al carrito existente..."
-                );
-                await syncLocalItemsToCart(userCart, localItems);
-                // Recargar después de sincronizar
-                setIsGettingCart(false);
-                await getCart();
-              }
-            }
-          }
-
-          hasLoadedRef.current = true;
-          broadcastCartUpdated();
+          await getCart();
         } catch (error) {
-          console.error("Error cargando carrito tras login:", error);
-
-          // Fallback: si falló el GET pero hay items locales, crear y sincronizar
-          if (localItems.length > 0) {
-            try {
-              // Lock global para evitar duplicados entre instancias
-              if (!acquireWindowLock("__cartCreateLock")) {
-                console.log(
-                  "⏳ Otro componente creando carrito tras error; esperando..."
-                );
-                await new Promise((r) => setTimeout(r, 500));
-                await getCart();
-              } else {
-                console.log(
-                  "🧩 Fallback: creando carrito tras error de red..."
-                );
-                const createResponse = await fetch(`${API_BASE_URL}/carts`, {
-                  method: "POST",
-                  headers: headersWithToken,
-                  body: JSON.stringify({ productIds: [] }),
-                });
-
-                if (createResponse.ok) {
-                  const newCart = await createResponse.json();
-                  setCart(newCart);
-                  await syncLocalItemsToCart(newCart, localItems);
-                  await getCart();
-                }
-              }
-            } finally {
-              releaseWindowLock("__cartCreateLock");
-            }
-          }
+          console.error("Error cargando carrito después del login:", error);
         } finally {
-          setIsLoading(false);
-          setIsGettingCart(false);
+          setIsInitialized(true);
         }
       }
     };
@@ -821,7 +659,7 @@ export const useCart = () => {
       window.removeEventListener("user_logged_out", handleLogout);
       window.removeEventListener("user_logged_in", handleLogin);
     };
-  }, [isGettingCart]); // Incluir isGettingCart para evitar llamadas concurrentes
+  }, [isGettingCart]);
 
   return {
     cart,
@@ -836,6 +674,6 @@ export const useCart = () => {
     removeFromCart,
     clearCart,
     cartItemCount: cartItems.reduce((total, item) => total + item.quantity, 0),
-    isLocalCart: !isLoggedIn && cartItems.length > 0, // Indicador de si es carrito local
+    isLocalCart: !isLoggedIn && cartItems.length > 0,
   };
 };
