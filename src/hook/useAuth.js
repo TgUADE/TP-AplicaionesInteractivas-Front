@@ -76,7 +76,7 @@ export const useAuth = () => {
     // Redirigir a home
     setTimeout(() => {
       window.location.href = "/home";
-    }, 100);
+    });
   };
 
   return {

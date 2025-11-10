@@ -118,28 +118,14 @@ export const useFavorites = () => {
 
   // Listener para eventos de login/logout
   useEffect(() => {
-    const handleLogout = () => {
+    if (!isLoggedIn) {
       setFavorites([]);
-      hasLoadedRef.current = false;
-      setIsInitialized(false);
-    };
-    
-    const handleLogin = (event) => {
-      const newToken = event.detail?.token;
-      if (newToken) {
-        hasLoadedRef.current = false;
-        dispatch(fetchFavoritesAction(newToken));
-      }
-    };
-    
-    window.addEventListener("user_logged_out", handleLogout);
-    window.addEventListener("user_logged_in", handleLogin);
-    
-    return () => {
-      window.removeEventListener("user_logged_out", handleLogout);
-      window.removeEventListener("user_logged_in", handleLogin);
-    };
-  }, [dispatch]);
+    } else {
+      // Al iniciar sesión, recargar favoritos
+      dispatch(fetchFavoritesAction(token));
+    }
+  }, [isLoggedIn, dispatch, token]);
+  
 
   return {
     favorites,

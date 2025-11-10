@@ -24,6 +24,7 @@ const orderSlice = createSlice({
     reducers: {},
     extraReducers: (builder) => {
         builder
+        //CREATE ORDER
             .addCase(createOrder.pending, (state) => {
                 console.log('orderSlice - pending');
                 state.loading = true;

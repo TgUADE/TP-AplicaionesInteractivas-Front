@@ -20,6 +20,7 @@ const promotionSlice = createSlice({
     reducers: {},
     extraReducers: (builder) => {
         builder
+        //GET PROMOTIONS
             .addCase(fetchPromotions.pending, (state) => {
                 state.loading = true;
                 state.error = null;
@@ -45,6 +46,7 @@ const productOnSaleSlice = createSlice({
     reducers: {},
     extraReducers: (builder) => {
         builder
+        //GET PRODUCTS ON SALE
             .addCase(productsOnSale.pending, (state) => {
                 state.loading = true;
                 state.error = null;

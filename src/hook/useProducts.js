@@ -1,6 +1,7 @@
 import { useState, useEffect, use } from "react";
 import { useDispatch , useSelector } from "react-redux";
 import { fetchProducts } from "../redux/slices/productSlice.js";
+import { fetchCategories } from "../redux/slices/categorySlice.js";
 
 const URLcategories = "/api/categories";
 const options = {
@@ -18,6 +19,7 @@ export const useProducts = () => {
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const dispatch = useDispatch();
   const {items, error, loading}=useSelector(state=>state.products);
+  const {items: categoryItems, error: categoryError, loading: categoryLoading}=useSelector(state=>state.categories);
 
   // Fetch products
   useEffect(() => {
@@ -47,28 +49,34 @@ export const useProducts = () => {
   }, [loading]);
 
 
-  // Fetch categories
+  // Fetch categories with category redux slice
   useEffect(() => {
-    let isMounted = true;
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
-    fetch(URLcategories, options)
-      .then((response) => response.json())
-      .then((data) => {
-        if (isMounted) {
-          setCategories(data);
-          setCategoriesLoaded(true);
-          console.log("Categories loaded:", data);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching categories:", error);
-        setCategoriesLoaded(true);
-      });
+  // Success fetch categories
+  useEffect(() => {
+    if (categoryItems.length > 0) {
+      setCategories(categoryItems);
+      setCategoriesLoaded(true);
+    }
+  }, [categoryItems]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  // Error fetch categories
+  useEffect(() => {
+    if (categoryError) {
+      console.error("Error fetching categories:", categoryError);
+    }
+  }, [categoryError]);
+
+  // Loading state
+  useEffect(() => {
+    if (categoryLoading) {
+      setIsLoading(true);
+    } else {
+      setIsLoading(false);
+    }
+  }, [categoryLoading]);
 
   // Update loading state
   useEffect(() => {

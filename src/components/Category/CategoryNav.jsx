@@ -7,7 +7,7 @@ const CategoryNav = ({
   onCategoryChange,
   showAllButton = true,
   allButtonText = "All",
-  linkMode = false, // Si true, usa Links en lugar de buttons
+  linkMode = false,
   className = ""
 }) => {
   const handleCategoryClick = (categoryValue) => {
@@ -16,7 +16,10 @@ const CategoryNav = ({
     }
   };
 
-  if (categories.length === 0) {
+  // Asegurar que categories es un array válido
+  const validCategories = Array.isArray(categories) ? categories : [];
+
+  if (validCategories.length === 0) {
     return null;
   }
 
@@ -35,7 +38,7 @@ const CategoryNav = ({
         )}
 
         {/* Category Buttons */}
-        {categories.map((category) => (
+        {validCategories.map((category) => (
           linkMode ? (
             <Link
               key={category.id}

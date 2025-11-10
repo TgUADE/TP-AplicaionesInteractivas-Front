@@ -31,7 +31,7 @@ const favoriteSlice = createSlice({
     },
     reducers: {},
     extraReducers: (builder) => {
-        // Builder 1: Fetch favorites
+        // GET FAVORITES
         builder
             .addCase(fetchFavorites.pending, (state) => {
                 console.log('favoriteSlice - fetchFavorites pending');
@@ -49,7 +49,7 @@ const favoriteSlice = createSlice({
                 state.error = action.error.message;
             })
             
-        // Builder 2: Toggle favorite 
+        // TOGGLE FAVORITE
             .addCase(toggleFavorite.pending, (state) => {
                 console.log('favoriteSlice - toggleFavorite pending');
                 state.loading = true;
