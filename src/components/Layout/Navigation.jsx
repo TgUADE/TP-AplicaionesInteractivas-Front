@@ -16,7 +16,7 @@ const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { isAdmin } = useAuth();
+  const { isAdmin, isLoggedIn } = useAuth();
 
   const navLinkClass = (path) =>
     `text-gray-800 no-underline font-medium text-base transition-all duration-300 py-2 relative ${
@@ -87,6 +87,13 @@ const Navigation = () => {
               Contact Us
             </Link>
           </li>
+          {isLoggedIn && !isAdmin && (
+            <li className="flex items-center">
+              <Link to="/my-orders" className={navLinkClass("/my-orders")}>
+                My Orders
+              </Link>
+            </li>
+          )}
           {isAdmin && (
             <li className="flex items-center">
               <Link to="/admin" className={navLinkClass("/admin")}>
@@ -206,6 +213,17 @@ const Navigation = () => {
                 Contact Us
               </Link>
             </li>
+            {isLoggedIn && !isAdmin && (
+              <li>
+                <Link
+                  to="/my-orders"
+                  className="block py-3 px-2 text-gray-800 font-medium hover:bg-gray-50 rounded-lg transition-all duration-300"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  My Orders
+                </Link>
+              </li>
+            )}
             {isAdmin && (
               <li>
                 <Link

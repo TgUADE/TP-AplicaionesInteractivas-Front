@@ -1,22 +1,23 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useAuth } from "../../hook/useAuth";
+import { useEffect, useMemo, useState } from "react";
 
 import ProductsTab from "../../components/Admin/tabs/ProductsTab";
 import ProductCreateModal from "../../components/Admin/modals/Products/ProductCreateModal";
 import ProductEditModal from "../../components/Admin/modals/Products/ProductEditModal";
 import ProductImagesModal from "../../components/Admin/modals/Products/ProductImagesModal";
 
+import { useDispatch, useSelector } from "react-redux";
 import {
-  getProducts,
-  createProduct,
-  updateProduct as updateProductService,
-  deleteProduct as deleteProductService,
-  uploadProductImage,
-  updateProductImage,
-  deleteProductImage,
-} from "../../services/products";
-
-const API_BASE = "/api";
+  createAdminProduct,
+  updateAdminProduct,
+  deleteAdminProduct,
+  uploadAdminProductImage,
+  updateAdminProductImage,
+  deleteAdminProductImage,
+} from "../../redux/slices/Admin/adminProductsSlice";
+import { fetchProducts } from "../../redux/slices/productSlice";
+import { fetchCategories } from "../../redux/slices/categorySlice";
+import Toast from "../../components/UI/Toast";
+import useToast from "../../hooks/useToast";
 
 const emptyProduct = {
   id: null,
@@ -28,27 +29,48 @@ const emptyProduct = {
 };
 
 const ProductsAdmin = () => {
-  const { token } = useAuth();
+  const dispatch = useDispatch();
+  const token = useSelector((state) => state.auth.token);
 
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { items: products = [], loading: productsLoading = false } =
+    useSelector((state) => state.products) ?? {};
+
+  const { mutationStatus = "idle" } =
+    useSelector((state) => state.adminProducts) ?? {};
+  const { items: categories = [], loading: categoriesLoading = false } =
+    useSelector((state) => state.categories) ?? {};
+
+  const { toast, showToast, dismissToast } = useToast();
+
+  useEffect(() => {
+    if (!token) return;
+    dispatch(fetchProducts())
+      .unwrap()
+      .catch((error) => {
+        console.error("Error fetching products", error);
+        showToast(
+          error?.message || "No se pudieron cargar los productos.",
+          "error"
+        );
+      });
+  }, [dispatch, showToast, token]);
+
+  const isMutating = mutationStatus === "loading";
 
   const [form, setForm] = useState(emptyProduct);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  const [categories, setCategories] = useState([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-
-  const totalPages = Math.max(1, Math.ceil(products.length / pageSize));
   const pagedProducts = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return products.slice(start, start + pageSize);
-  }, [products, currentPage, pageSize]);
+  }, [products, currentPage]);
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil((products?.length ?? 0) / pageSize)),
+    [products?.length, pageSize]
+  );
 
   const [pendingProductDeleteId, setPendingProductDeleteId] = useState(null);
 
@@ -61,16 +83,7 @@ const ProductsAdmin = () => {
     displayOrder: 1,
   });
   const [editingImage, setEditingImage] = useState(false);
-  const [savingImage, setSavingImage] = useState(false);
   const [deletingImageId, setDeletingImageId] = useState(null);
-
-  const authHeaders = useMemo(
-    () => ({
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    }),
-    [token]
-  );
 
   const updateProductForm = (patch) =>
     setForm((prev) => ({ ...prev, ...patch }));
@@ -78,49 +91,17 @@ const ProductsAdmin = () => {
   const updateImageForm = (patch) =>
     setImageForm((prev) => ({ ...prev, ...patch }));
 
-  const loadProducts = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await getProducts(token);
-      setProducts(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error(error);
-      alert("Error cargando productos");
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
-
   useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
-
-  useEffect(() => {
-    const tp = Math.max(1, Math.ceil(products.length / pageSize));
-    if (currentPage > tp) setCurrentPage(tp);
-  }, [products, currentPage, pageSize]);
-
-  const fetchCategories = async () => {
-    setCategoriesLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/categories`, {
-        headers: authHeaders,
-      });
-      const data = await res.json();
-      setCategories(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error(error);
-      alert("Error cargando categorías");
-    } finally {
-      setCategoriesLoading(false);
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
     }
-  };
+  }, [currentPage, totalPages]);
 
   const openCreate = () => {
     setForm(emptyProduct);
     setIsCreateOpen(true);
     if (categories.length === 0) {
-      fetchCategories();
+      dispatch(fetchCategories());
     }
   };
 
@@ -135,7 +116,7 @@ const ProductsAdmin = () => {
     });
     setIsEditOpen(true);
     if (categories.length === 0) {
-      fetchCategories();
+      dispatch(fetchCategories());
     }
   };
 
@@ -166,10 +147,9 @@ const ProductsAdmin = () => {
   const saveProduct = async () => {
     try {
       if (!form.name || !form.price || !form.stock || !form.category_id) {
-        alert("Completa nombre, precio, stock y categoría.");
+        showToast("Completa nombre, precio, stock y categoría.", "error");
         return;
       }
-      setSaving(true);
       const body = {
         name: form.name,
         description: form.description,
@@ -177,26 +157,26 @@ const ProductsAdmin = () => {
         stock: Number(form.stock),
         category_id: form.category_id,
       };
-      await createProduct(token, body);
+
+      await dispatch(createAdminProduct(body));
       setIsCreateOpen(false);
       setForm(emptyProduct);
-      await loadProducts();
+      showToast("Producto guardado exitosamente.", "success");
+      await dispatch(fetchProducts()).unwrap();
     } catch (error) {
       console.error(error);
-      alert(error.message);
-    } finally {
-      setSaving(false);
+      showToast(error?.message || "No se pudo guardar el producto.", "error");
     }
   };
 
   const updateProduct = async () => {
     try {
       if (!form.id) {
-        alert("Producto inválido");
+        showToast("Producto inválido.", "error");
         return;
       }
       if (!form.name || !form.price || !form.stock || !form.category_id) {
-        alert("Completa nombre, precio, stock y categoría.");
+        showToast("Completa nombre, precio, stock y categoría.", "error");
         return;
       }
       const body = {
@@ -206,13 +186,17 @@ const ProductsAdmin = () => {
         stock: Number(form.stock),
         category_id: form.category_id,
       };
-      await updateProductService(token, form.id, body);
+      await dispatch(updateAdminProduct({ productId: form.id, payload: body }));
       setIsEditOpen(false);
       setForm(emptyProduct);
-      await loadProducts();
+      showToast("Producto actualizado correctamente.", "success");
+      await dispatch(fetchProducts()).unwrap();
     } catch (error) {
       console.error(error);
-      alert(error.message);
+      showToast(
+        error?.message || "No se pudo actualizar el producto.",
+        "error"
+      );
     }
   };
 
@@ -220,11 +204,12 @@ const ProductsAdmin = () => {
     if (!confirm("¿Eliminar producto?")) return;
     try {
       setPendingProductDeleteId(id);
-      await deleteProductService(token, id);
-      await loadProducts();
+      await dispatch(deleteAdminProduct(id));
+      showToast("Producto eliminado.", "success");
+      await dispatch(fetchProducts()).unwrap();
     } catch (error) {
       console.error(error);
-      alert(error.message);
+      showToast(error?.message || "No se pudo eliminar el producto.", "error");
     } finally {
       setPendingProductDeleteId(null);
     }
@@ -233,76 +218,73 @@ const ProductsAdmin = () => {
   const uploadImage = async () => {
     try {
       if (!imageProduct?.id) {
-        alert("Producto inválido");
+        showToast("Producto inválido.", "error");
         return;
       }
       if (!imageForm.imageUrl) {
-        alert("Ingresa la URL de la imagen");
+        showToast("Ingresa la URL de la imagen.", "error");
         return;
       }
-      setSavingImage(true);
       const body = {
         imageUrl: imageForm.imageUrl,
         altText: imageForm.altText,
         isPrimary: Boolean(imageForm.isPrimary),
         displayOrder: Number(imageForm.displayOrder),
       };
-      await uploadProductImage(token, imageProduct.id, body);
-      alert("Imagen subida");
+      await dispatch(
+        uploadAdminProductImage({ productId: imageProduct.id, payload: body })
+      );
+      showToast("Imagen subida correctamente.", "success");
       setIsImageOpen(false);
-      await loadProducts();
+      await dispatch(fetchProducts()).unwrap();
     } catch (error) {
       console.error(error);
-      alert(error.message);
-    } finally {
-      setSavingImage(false);
+      showToast(error?.message || "No se pudo subir la imagen.", "error");
     }
   };
 
   const editImage = async () => {
     try {
-      if (!imageProduct?.id) {
-        alert("Producto inválido");
-        return;
-      }
-      if (!imageForm.imageUrl) {
-        alert("Ingresa la URL de la imagen");
-        return;
-      }
-      setSavingImage(true);
-      const body = {
-        imageUrl: imageForm.imageUrl,
-        altText: imageForm.altText,
-        isPrimary: Boolean(imageForm.isPrimary),
-        displayOrder: Number(imageForm.displayOrder),
-      };
-      await updateProductImage(token, imageProduct.id, imageForm.id, body);
-      alert("Imagen editada");
+      await dispatch(
+        updateAdminProductImage({
+          productId: imageProduct.id,
+          imageId: imageForm.id,
+          payload: {
+            imageUrl: imageForm.imageUrl,
+            altText: imageForm.altText,
+            isPrimary: Boolean(imageForm.isPrimary),
+            displayOrder: Number(imageForm.displayOrder),
+          },
+        })
+      );
+      showToast("Imagen editada correctamente.", "success");
       setIsImageOpen(false);
-      await loadProducts();
+      await dispatch(fetchProducts()).unwrap();
     } catch (error) {
-      console.error(error);
-      alert(error.message);
-    } finally {
-      setSavingImage(false);
+      showToast(error?.message || "No se pudo editar la imagen.", "error");
     }
   };
 
   const deleteImage = async (imageId) => {
     if (!imageProduct?.id) {
-      alert("Producto inválido");
+      showToast("Producto inválido.", "error");
       return;
     }
     if (!confirm("¿Eliminar imagen?")) return;
     try {
       setDeletingImageId(imageId);
-      await deleteProductImage(token, imageProduct.id, imageId);
-      alert("Imagen eliminada");
+      await dispatch(
+        deleteAdminProductImage({
+          productId: imageProduct.id,
+          imageId: imageId,
+        })
+      );
+      showToast("Imagen eliminada.", "success");
       setIsImageOpen(false);
-      await loadProducts();
+      await dispatch(fetchProducts()).unwrap();
     } catch (error) {
       console.error(error);
-      alert(error.message);
+      showToast(error?.message || "No se pudo eliminar la imagen.", "error");
     } finally {
       setDeletingImageId(null);
     }
@@ -315,7 +297,7 @@ const ProductsAdmin = () => {
         form={form}
         categories={categories}
         categoriesLoading={categoriesLoading}
-        saving={saving}
+        saving={isMutating}
         onClose={() => setIsCreateOpen(false)}
         onChange={updateProductForm}
         onSubmit={saveProduct}
@@ -326,6 +308,7 @@ const ProductsAdmin = () => {
         form={form}
         categories={categories}
         categoriesLoading={categoriesLoading}
+        saving={isMutating}
         onClose={() => setIsEditOpen(false)}
         onChange={updateProductForm}
         onSubmit={updateProduct}
@@ -336,7 +319,7 @@ const ProductsAdmin = () => {
         product={imageProduct}
         form={imageForm}
         editing={editingImage}
-        saving={savingImage}
+        saving={isMutating}
         deletingImageId={deletingImageId}
         onClose={() => setIsImageOpen(false)}
         onChangeForm={updateImageForm}
@@ -349,7 +332,7 @@ const ProductsAdmin = () => {
       <ProductsTab
         products={products}
         pagedProducts={pagedProducts}
-        loading={loading}
+        loading={productsLoading}
         currentPage={currentPage}
         totalPages={totalPages}
         pageSize={pageSize}
@@ -360,6 +343,7 @@ const ProductsAdmin = () => {
         onOpenEdit={openEdit}
         onDeleteProduct={deleteProduct}
       />
+      <Toast toast={toast} onClose={dismissToast} />
     </>
   );
 };

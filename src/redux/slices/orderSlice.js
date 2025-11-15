@@ -1,46 +1,95 @@
-import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
-import axios from 'axios';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import axios from "axios";
 
-
-// Recibe un objeto con orderData y token
-export const createOrder = createAsyncThunk("order/createOrder", async ({ orderData, token }) => {  
+export const createOrder = createAsyncThunk(
+  "order/createOrder",
+  async ({ orderData, token }) => {
     const { data } = await axios.post("/orders", orderData, {
-    headers: {
+      headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
-    },
+      },
     });
     return data;
-}
+  }
+);
+
+export const fetchMyOrders = createAsyncThunk(
+  "order/fetchMyOrders",
+  async (_, { getState }) => {
+    const state = getState();
+    const token = state?.auth?.token;
+
+    if (!token) {
+      throw new Error("Debes iniciar sesión para ver tus órdenes.");
+    }
+
+    const { data } = await axios.get("/orders/my-orders", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return Array.isArray(data) ? data : [];
+  }
 );
 
 const orderSlice = createSlice({
-    name: "order",
-    initialState: {
-        items: null,
-        loading: false,
-        error: null,
+  name: "order",
+  initialState: {
+    items: null,
+    loading: false,
+    error: null,
+    myOrders: [],
+    myOrdersLoading: false,
+    myOrdersError: null,
+    myOrdersLoaded: false,
+  },
+  reducers: {
+    clearOrderState: (state) => {
+      state.items = null;
+      state.loading = false;
+      state.error = null;
+      state.myOrders = [];
+      state.myOrdersLoading = false;
+      state.myOrdersError = null;
+      state.myOrdersLoaded = false;
     },
-    reducers: {},
-    extraReducers: (builder) => {
-        builder
-        //CREATE ORDER
-            .addCase(createOrder.pending, (state) => {
-                console.log('orderSlice - pending');
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(createOrder.fulfilled, (state, action) => {
-                console.log('orderSlice - fulfilled:', action.payload);
-                state.loading = false;
-                state.items = action.payload;
-            })
-            .addCase(createOrder.rejected, (state, action) => {
-                console.log('orderSlice - rejected:', action.error);
-                state.loading = false;
-                state.error = action.error.message;
-            }); 
-    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(createOrder.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createOrder.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = action.payload;
+      })
+      .addCase(createOrder.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      })
+      .addCase(fetchMyOrders.pending, (state) => {
+        state.myOrdersLoading = true;
+        state.myOrdersError = null;
+        if (!state.myOrdersLoaded) {
+          state.myOrders = [];
+        }
+      })
+      .addCase(fetchMyOrders.fulfilled, (state, action) => {
+        state.myOrdersLoading = false;
+        state.myOrdersLoaded = true;
+        state.myOrders = action.payload ?? [];
+      })
+      .addCase(fetchMyOrders.rejected, (state, action) => {
+        state.myOrdersLoading = false;
+        state.myOrdersError = action.error.message;
+        state.myOrdersLoaded = false;
+      });
+  },
 });
+
+export const { clearOrderState } = orderSlice.actions;
 
 export default orderSlice.reducer;

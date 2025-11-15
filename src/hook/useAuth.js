@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { loginUser, registerUser, logout as logoutAction, initializeAuth } from "../redux/slices/authSlice";
+import {
+  loginUser,
+  registerUser,
+  logout as logoutAction,
+  initializeAuth,
+} from "../redux/slices/authSlice";
 import { clearUserProfile } from "../redux/slices/userSlice";
+import { clearOrderState } from "../redux/slices/orderSlice";
 
 export const useAuth = () => {
   const dispatch = useDispatch();
-  const { token, isLoggedIn, isLoading, error, isInitialized } = useSelector((state) => state.auth);
+  const { token, isLoggedIn, isLoading, error, isInitialized } = useSelector(
+    (state) => state.auth
+  );
   const { profile } = useSelector((state) => state.user);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -28,7 +36,7 @@ export const useAuth = () => {
     try {
       console.log("🔐 Attempting login with credentials:", credentials);
       const resultAction = await dispatch(loginUser(credentials));
-      
+
       if (loginUser.fulfilled.match(resultAction)) {
         const userData = resultAction.payload;
         console.log("✅ Login successful:", userData);
@@ -47,7 +55,7 @@ export const useAuth = () => {
     try {
       console.log("📝 Attempting registration:", userInfo);
       const resultAction = await dispatch(registerUser(userInfo));
-      
+
       if (registerUser.fulfilled.match(resultAction)) {
         const userData = resultAction.payload;
         console.log("✅ Registration successful:", userData);
@@ -64,15 +72,16 @@ export const useAuth = () => {
   // Logout function
   const logout = () => {
     console.log("🚪 Iniciando logout...");
-    
+
     // Limpiar perfil de usuario
     dispatch(clearUserProfile());
-    
+    dispatch(clearOrderState());
+
     // Limpiar auth
     dispatch(logoutAction());
-    
+
     console.log("✅ Logout completado - Redirigiendo a /home");
-    
+
     // Redirigir a home
     setTimeout(() => {
       window.location.href = "/home";

@@ -1,44 +1,43 @@
-import { useCallback, useEffect, useState } from "react";
-import { useAuth } from "../../hook/useAuth";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { exportUsersToCSV } from "../../lib/utils";
 
 import UsersTab from "../../components/Admin/tabs/UsersTab";
 
-import { getUsers as getUsersService } from "../../services/users";
+import { fetchAdminUsers } from "../../redux/slices/Admin/adminUsersSlice";
+import Toast from "../../components/UI/Toast";
+import useToast from "../../hooks/useToast";
 
 const UsersAdmin = () => {
-  const { token } = useAuth();
+  const dispatch = useDispatch();
+  const { toast, showToast, dismissToast } = useToast();
 
-  const [users, setUsers] = useState([]);
-  const [usersLoading, setUsersLoading] = useState(false);
-
-  const fetchUsers = useCallback(async () => {
-    setUsersLoading(true);
-    try {
-      const data = await getUsersService(token);
-      setUsers(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error(error);
-      alert("Error cargando usuarios");
-    } finally {
-      setUsersLoading(false);
-    }
-  }, [token]);
+  const { items: users = [], loading: usersLoading = false } =
+    useSelector((state) => state.adminUsers) ?? {};
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    dispatch(fetchAdminUsers()).catch((error) => {
+      console.error("Error cargando usuarios", error);
+      showToast(
+        error?.message || "No se pudieron cargar los usuarios.",
+        "error"
+      );
+    });
+  }, [dispatch, showToast]);
 
   const handleExport = () => {
     try {
       exportUsersToCSV(users);
     } catch (error) {
-      alert(error.message);
+      showToast(error.message, "error");
     }
   };
 
   return (
-    <UsersTab users={users} loading={usersLoading} onExport={handleExport} />
+    <>
+      <UsersTab users={users} loading={usersLoading} onExport={handleExport} />
+      <Toast toast={toast} onClose={dismissToast} />
+    </>
   );
 };
 

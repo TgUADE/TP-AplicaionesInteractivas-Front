@@ -1,16 +1,17 @@
-import { useCallback, useEffect, useState } from "react";
-import { useAuth } from "../../hook/useAuth";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import CategoriesTab from "../../components/Admin/tabs/CategoriesTab";
 import CategoryCreateModal from "../../components/Admin/modals/Categories/CategoryCreateModal";
 import CategoryEditModal from "../../components/Admin/modals/Categories/CategoryEditModal";
-
+import Toast from "../../components/UI/Toast";
+import useToast from "../../hooks/useToast";
+import { fetchCategories } from "../../redux/slices/categorySlice";
 import {
-  getCategories as getCategoriesService,
-  createCategory as createCategoryService,
-  updateCategory as updateCategoryService,
-  deleteCategory as deleteCategoryService,
-} from "../../services/categories";
+  createAdminCategory,
+  updateAdminCategory,
+  deleteAdminCategory,
+} from "../../redux/slices/Admin/adminCategoriesSlice";
 
 const emptyCategory = {
   id: null,
@@ -18,34 +19,35 @@ const emptyCategory = {
 };
 
 const CategoriesAdmin = () => {
-  const { token } = useAuth();
+  const dispatch = useDispatch();
+  const token = useSelector((state) => state.auth.token);
+  const { toast, showToast, dismissToast } = useToast();
 
-  const [categories, setCategories] = useState([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const { items: categories = [], loading: categoriesLoading = false } =
+    useSelector((state) => state.categories) ?? {};
+  const { mutationStatus = "idle" } =
+    useSelector((state) => state.adminCategories) ?? {};
+
   const [categoryForm, setCategoryForm] = useState(emptyCategory);
   const [isCategoryCreateOpen, setIsCategoryCreateOpen] = useState(false);
   const [isCategoryEditOpen, setIsCategoryEditOpen] = useState(false);
-  const [savingCategory, setSavingCategory] = useState(false);
+  const isMutating = mutationStatus === "loading";
 
   const updateCategoryForm = (patch) =>
     setCategoryForm((prev) => ({ ...prev, ...patch }));
 
-  const fetchCategories = useCallback(async () => {
-    setCategoriesLoading(true);
-    try {
-      const data = await getCategoriesService(token);
-      setCategories(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error(error);
-      alert("Error cargando categorías");
-    } finally {
-      setCategoriesLoading(false);
-    }
-  }, [token]);
-
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    if (!token) return;
+    dispatch(fetchCategories())
+      .unwrap()
+      .catch((error) => {
+        console.error("Error cargando categorías", error);
+        showToast(
+          error?.message || "No se pudieron cargar las categorías.",
+          "error"
+        );
+      });
+  }, [dispatch, showToast, token]);
 
   const openCreateCategory = () => {
     setCategoryForm(emptyCategory);
@@ -63,57 +65,64 @@ const CategoriesAdmin = () => {
   const saveCategory = async () => {
     try {
       if (!categoryForm.description?.trim()) {
-        alert("Ingresa una descripción");
+        showToast("Ingresa una descripción.", "error");
         return;
       }
-      setSavingCategory(true);
-      await createCategoryService(token, {
-        description: categoryForm.description.trim(),
-      });
+      await dispatch(
+        createAdminCategory({
+          description: categoryForm.description.trim(),
+        })
+      );
+      await dispatch(fetchCategories()).unwrap();
       setIsCategoryCreateOpen(false);
       setCategoryForm(emptyCategory);
-      await fetchCategories();
+      showToast("Categoría creada correctamente.", "success");
     } catch (error) {
       console.error(error);
-      alert(error.message);
-    } finally {
-      setSavingCategory(false);
+      showToast(error?.message || "No se pudo crear la categoría.", "error");
     }
   };
 
   const updateCategory = async () => {
     try {
       if (!categoryForm.id) {
-        alert("Categoría inválida");
+        showToast("Categoría inválida.", "error");
         return;
       }
       if (!categoryForm.description?.trim()) {
-        alert("Ingresa una descripción");
+        showToast("Ingresa una descripción.", "error");
         return;
       }
-      setSavingCategory(true);
-      await updateCategoryService(token, categoryForm.id, {
-        description: categoryForm.description.trim(),
-      });
+      await dispatch(
+        updateAdminCategory({
+          categoryId: categoryForm.id,
+          payload: {
+            description: categoryForm.description.trim(),
+          },
+        })
+      );
+      await dispatch(fetchCategories()).unwrap();
       setIsCategoryEditOpen(false);
       setCategoryForm(emptyCategory);
-      await fetchCategories();
+      showToast("Categoría actualizada correctamente.", "success");
     } catch (error) {
       console.error(error);
-      alert(error.message);
-    } finally {
-      setSavingCategory(false);
+      showToast(
+        error?.message || "No se pudo actualizar la categoría.",
+        "error"
+      );
     }
   };
 
   const deleteCategoryById = async (id) => {
     if (!confirm("¿Eliminar categoría?")) return;
     try {
-      await deleteCategoryService(token, id);
-      await fetchCategories();
+      await dispatch(deleteAdminCategory(id));
+      await dispatch(fetchCategories()).unwrap();
+      showToast("Categoría eliminada.", "success");
     } catch (error) {
       console.error(error);
-      alert(error.message);
+      showToast(error?.message || "No se pudo eliminar la categoría.", "error");
     }
   };
 
@@ -122,7 +131,7 @@ const CategoriesAdmin = () => {
       <CategoryCreateModal
         isOpen={isCategoryCreateOpen}
         form={categoryForm}
-        saving={savingCategory}
+        saving={isMutating}
         onClose={() => setIsCategoryCreateOpen(false)}
         onChange={updateCategoryForm}
         onSubmit={saveCategory}
@@ -131,7 +140,7 @@ const CategoriesAdmin = () => {
       <CategoryEditModal
         isOpen={isCategoryEditOpen}
         form={categoryForm}
-        saving={savingCategory}
+        saving={isMutating}
         onClose={() => setIsCategoryEditOpen(false)}
         onChange={updateCategoryForm}
         onSubmit={updateCategory}
@@ -144,6 +153,7 @@ const CategoriesAdmin = () => {
         onOpenEdit={openEditCategory}
         onDelete={deleteCategoryById}
       />
+      <Toast toast={toast} onClose={dismissToast} />
     </>
   );
 };

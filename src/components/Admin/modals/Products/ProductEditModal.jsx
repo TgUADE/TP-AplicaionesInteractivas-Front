@@ -5,8 +5,9 @@ import Modal from "../../../UI/Modal";
 const ProductEditModal = ({
   isOpen,
   form,
-  categories,
-  categoriesLoading,
+  categories = [],
+  categoriesLoading = false,
+  saving = false,
   onClose,
   onChange,
   onSubmit,
@@ -85,8 +86,9 @@ const ProductEditModal = ({
         <Button
           onClick={onSubmit}
           className="bg-black text-white rounded-full px-6 h-10"
+          disabled={saving}
         >
-          Guardar cambios
+          {saving ? "Guardando..." : "Guardar cambios"}
         </Button>
       </div>
     </div>

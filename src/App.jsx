@@ -12,6 +12,7 @@ import Auth from "./views/Auth";
 import Profile from "./views/Profile";
 import Cart from "./views/Cart";
 import Favorites from "./views/Favorites";
+import MyOrders from "./views/MyOrders";
 import RequireAdmin from "./components/RouteGuards/RequireAdmin";
 import AdminLayout from "./components/Admin/AdminLayout";
 import ProductsAdmin from "./views/Admin/ProductsAdmin";
@@ -37,6 +38,7 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/my-orders" element={<MyOrders />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/favorites" element={<Favorites />} />
         <Route

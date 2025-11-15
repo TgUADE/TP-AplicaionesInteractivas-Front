@@ -5,8 +5,8 @@ import Modal from "../../../UI/Modal";
 const ProductCreateModal = ({
   isOpen,
   form,
-  categories,
-  categoriesLoading,
+  categories = [],
+  categoriesLoading = false,
   saving,
   onClose,
   onChange,

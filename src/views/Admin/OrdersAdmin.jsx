@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useAuth } from "../../hook/useAuth";
+import { useDispatch, useSelector } from "react-redux";
 
 import OrdersTab from "../../components/Admin/tabs/OrdersTab";
 import OrderProductsModal from "../../components/Admin/modals/Orders/OrderProductsModal";
-
+import Toast from "../../components/UI/Toast";
+import useToast from "../../hooks/useToast";
 import {
-  getOrders as getOrdersService,
-  updateOrderStatus as updateOrderStatusService,
-} from "../../services/orders";
+  fetchAdminOrders,
+  updateAdminOrderStatus,
+} from "../../redux/slices/Admin/adminOrdersSlice";
 
 const ordersPageSize = 20;
 
@@ -38,10 +39,17 @@ const parseOrderItems = (order) => {
 };
 
 const OrdersAdmin = () => {
-  const { token } = useAuth();
+  const dispatch = useDispatch();
+  const { toast, showToast, dismissToast } = useToast();
 
-  const [orders, setOrders] = useState([]);
-  const [ordersLoading, setOrdersLoading] = useState(true);
+  const {
+    items: orders = [],
+    loading: ordersLoading = false,
+    error: ordersError = null,
+    mutationStatus = "idle",
+    mutationError = null,
+  } = useSelector((state) => state.adminOrders) ?? {};
+
   const [ordersPage, setOrdersPage] = useState(1);
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
 
@@ -50,32 +58,27 @@ const OrdersAdmin = () => {
     []
   );
 
-  const fetchOrders = useCallback(async () => {
-    if (!token) return;
-
-    setOrdersLoading(true);
-    try {
-      const data = await getOrdersService(token);
-      const sorted = Array.isArray(data)
-        ? data.sort((a, b) => {
-            const dateA = new Date(a.createdAt || a.created_at);
-            const dateB = new Date(b.createdAt || b.created_at);
-            return dateB - dateA;
-          })
-        : [];
-      setOrders(sorted);
-    } catch (error) {
-      console.error(error);
-      alert("Error cargando órdenes");
-    } finally {
-      setOrdersLoading(false);
-    }
-  }, [token]);
+  useEffect(() => {
+    dispatch(fetchAdminOrders()).catch((error) => {
+      console.error("Error cargando órdenes", error);
+      showToast(
+        error?.message || "No se pudieron cargar las órdenes.",
+        "error"
+      );
+    });
+  }, [dispatch, showToast]);
 
   useEffect(() => {
-    if (!token) return;
-    fetchOrders();
-  }, [token, fetchOrders]);
+    if (ordersError) {
+      showToast(ordersError, "error");
+    }
+  }, [ordersError, showToast]);
+
+  useEffect(() => {
+    if (mutationStatus === "failed" && mutationError) {
+      showToast(mutationError, "error");
+    }
+  }, [mutationStatus, mutationError, showToast]);
 
   useEffect(() => {
     const totalPages = Math.max(1, Math.ceil(orders.length / ordersPageSize));
@@ -136,35 +139,30 @@ const OrdersAdmin = () => {
 
   const handleOrderStatusChange = useCallback(
     async (order, nextStatus) => {
-      if (!token) return;
-
       const id = orderIdentifier(order);
       if (!id) return;
 
       setUpdatingOrderId(id);
 
       try {
-        const updated = await updateOrderStatusService(token, id, nextStatus);
-        setOrders((prev) =>
-          prev.map((item) => {
-            const currentId = orderIdentifier(item);
-            if (currentId !== id) return item;
-
-            const payload =
-              updated && typeof updated === "object" ? updated : {};
-            const status = payload.status ?? nextStatus ?? item.status;
-
-            return { ...item, ...payload, status };
+        await dispatch(
+          updateAdminOrderStatus({
+            orderId: id,
+            status: nextStatus,
           })
         );
+        showToast("Estado de la orden actualizado.", "success");
       } catch (error) {
         console.error(error);
-        alert("No se pudo actualizar el estado de la orden");
+        showToast(
+          error?.message || "No se pudo actualizar el estado de la orden.",
+          "error"
+        );
       } finally {
         setUpdatingOrderId(null);
       }
     },
-    [token, orderIdentifier]
+    [dispatch, orderIdentifier, showToast]
   );
 
   return (
@@ -193,6 +191,7 @@ const OrdersAdmin = () => {
         updatingOrderId={updatingOrderId}
         statusOptions={ORDER_STATUS_OPTIONS}
       />
+      <Toast toast={toast} onClose={dismissToast} />
     </>
   );
 };
