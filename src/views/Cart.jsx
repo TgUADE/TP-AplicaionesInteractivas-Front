@@ -11,6 +11,8 @@ import CartProducts from "../components/Cart/CartProducts";
 import OrderSummary from "../components/Cart/OrderSummary";
 import CheckoutModal from "../components/Cart/CheckoutModal";
 import OrderConfirmed from "../components/Cart/OrderConfirmed";
+import Toast from "../components/UI/Toast";
+import useToast from "../hook/useToast";
 const Cart = () => {
   const navigate = useNavigate();
   const {
@@ -34,6 +36,7 @@ const Cart = () => {
     error: orderError,
     order,
   } = useOrder();
+  const { toast, showToast, dismissToast } = useToast();
 
   // Estado del modal y formulario de checkout
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
@@ -65,20 +68,48 @@ const Cart = () => {
   }, [cartItems, products]);
 
   const handleQuantityChange = async (productId, newQuantity) => {
-    if (newQuantity <= 0) {
-      await removeFromCart(productId);
-    } else {
-      await updateQuantity(productId, newQuantity);
+    try {
+      if (newQuantity <= 0) {
+        await removeFromCart(productId);
+        showToast("Product removed from cart", "success");
+      } else {
+        await updateQuantity(productId, newQuantity);
+        showToast("Cart updated", "success");
+      }
+    } catch (error) {
+      console.error("Error updating cart:", error);
+      showToast(
+        error?.message || "Error updating cart",
+        "error"
+      );
     }
   };
 
   const handleRemoveItem = async (productId) => {
-    await removeFromCart(productId);
+    try {
+      await removeFromCart(productId);
+      showToast("Product removed from cart", "success");
+    } catch (error) {
+      console.error("Error removing product from cart:", error);
+      showToast(
+        error?.message || "Error removing product from cart",
+        "error"
+      );
+    }
   };
 
   const handleClearCart = async () => {
     if (window.confirm("¿Are you sure you want to clear the cart?")) {
-      await clearCart();
+      try {
+        await clearCart();
+        showToast("Cart cleared", "success");
+      } catch (error) {
+        console.error("Error clearing cart:", error);
+        showToast(
+          error?.message || "Error clearing cart",
+          "error"
+        );
+      }
     }
   };
 
@@ -304,6 +335,7 @@ const Cart = () => {
           />
         )}
       </div>
+      <Toast toast={toast} onClose={dismissToast} />
     </div>
   );
 };

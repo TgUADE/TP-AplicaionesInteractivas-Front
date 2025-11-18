@@ -7,6 +7,8 @@ import { clearUserProfile } from "../redux/slices/userSlice";
 import LoadingSpinner from "../components/UI/LoadingSpinner";
 import ProfileIconAndMail from "../components/Profile/ProfileIconAndMail";
 import ProfileForm from "../components/Profile/ProfileForm";
+import Toast from "../components/UI/Toast";
+import useToast from "../hook/useToast";
 
 const Profile = () => {
   const { isLoggedIn, logout, isInitialized } = useAuth();
@@ -15,8 +17,9 @@ const Profile = () => {
   const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState({});
+  const { toast, showToast, dismissToast } = useToast();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Update editedData when profile loads
   useEffect(() => {
     if (profile) {
       setEditedData(profile);
@@ -24,18 +27,26 @@ const Profile = () => {
   }, [profile]);
 
   useEffect(() => {
-    if (isInitialized && !isLoggedIn) {
+    if (isInitialized && !isLoggedIn && !isLoggingOut) {
       navigate("/auth");
     }
-  }, [isLoggedIn, isInitialized, navigate]);
+  }, [isLoggedIn, isInitialized, navigate, isLoggingOut]);
 
   const handleLogout = () => {
-    // Limpiar perfil de Redux primero
-    dispatch(clearUserProfile());
-    // Hacer logout
-    logout();
-    // Navegar a home
-    navigate("/home");
+    try {
+      setIsLoggingOut(true);
+      showToast("Logged out successfully", "success");
+      
+      setTimeout(() => {
+        dispatch(clearUserProfile());
+        logout();
+        navigate("/home");
+      }, 1500);
+    } catch (error) {
+      console.error("❌ Error during logout:", error);
+      setIsLoggingOut(false);
+      showToast("Error during logout. Please try again.", "error");
+    }
   };
 
   const handleEdit = (e) => {
@@ -63,10 +74,11 @@ const Profile = () => {
     try {
       await updateProfile(editedData);
       setIsEditing(false);
+      showToast("Profile updated successfully", "success");
       console.log("✅ Profile updated successfully");
     } catch (error) {
       console.error("❌ Error updating profile:", error);
-      alert("Error updating profile. Please try again.");
+      showToast("Error updating profile. Please try again.", "error");
     }
   };
 
@@ -74,15 +86,20 @@ const Profile = () => {
     if (window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
       try {
         await deleteAccount();
-        // Limpiar perfil de Redux
-        dispatch(clearUserProfile());
-        // Hacer logout y navegar
-        logout();
-        navigate("/home");
+        setIsLoggingOut(true);
+        showToast("Account deleted successfully", "success");
+        
+        setTimeout(() => {
+          dispatch(clearUserProfile());
+          logout();
+          navigate("/home");
+        }, 1500);
+        
         console.log("✅ Account deleted successfully");
       } catch (error) {
         console.error("❌ Error deleting account:", error);
-        alert("Error deleting account. Please try again.");
+        setIsLoggingOut(false);
+        showToast("Error deleting account. Please try again.", "error");
       }
     }
   };
@@ -91,7 +108,6 @@ const Profile = () => {
     setEditedData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Show loading while auth is initializing OR profile is loading/initializing
   if (!isInitialized || !profileInitialized || (isLoading && !profile)) {
     return (
       <div className="min-h-screen bg-white w-full flex items-center justify-center">
@@ -100,11 +116,10 @@ const Profile = () => {
     );
   }
 
-  if (!isLoggedIn) {
+  if (!isLoggedIn && !isLoggingOut) {
     return null;
   }
 
-  // Handle profile error
   if (error) {
     return (
       <div className="min-h-screen bg-white w-full flex items-center justify-center">
@@ -125,14 +140,12 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-white w-full">
       <section className="py-15 bg-white w-full px-10 lg:py-10 lg:px-5 md:py-8 md:px-4">
-        {/* Header */}
         <div className="mb-12">
           <h1 className="text-4xl font-semibold text-black mb-4">
             {isEditing ? "Edit Your Profile" : "Your Profile"}
           </h1>
         </div>
 
-        {/* Profile Container */}
         <div className="max-w-6xl mx-auto">
           <ProfileIconAndMail 
             profileName={profile?.name}
@@ -140,7 +153,6 @@ const Profile = () => {
             profileEmail={profile?.email}
           />  
 
-          {/* Profile Form */}
           <ProfileForm
             profile={profile}
             editedData={editedData}
@@ -152,7 +164,6 @@ const Profile = () => {
             handleLogout={handleLogout}
           />
 
-          {/* Delete Account */}
           <div className="text-center mt-8 pb-12">
             <button
               onClick={handleDeleteAccount}
@@ -163,6 +174,7 @@ const Profile = () => {
           </div>
         </div>
       </section>
+      <Toast toast={toast} onClose={dismissToast} />
     </div>
   );
 };

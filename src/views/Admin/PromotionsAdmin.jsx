@@ -19,7 +19,7 @@ import {
   fetchPromotions as fetchPublicPromotions,
   productsOnSale as fetchProductsOnSale,
 } from "../../redux/slices/promotionSlice";
-import useToast from "../../hooks/useToast";
+import  useToast  from "../../hook/useToast";
 import Toast from "../../components/UI/Toast";
 
 const emptyPromotion = {

@@ -5,7 +5,7 @@ import CategoriesTab from "../../components/Admin/tabs/CategoriesTab";
 import CategoryCreateModal from "../../components/Admin/modals/Categories/CategoryCreateModal";
 import CategoryEditModal from "../../components/Admin/modals/Categories/CategoryEditModal";
 import Toast from "../../components/UI/Toast";
-import useToast from "../../hooks/useToast";
+import useToast  from "../../hook/useToast";
 import { fetchCategories } from "../../redux/slices/categorySlice";
 import {
   createAdminCategory,

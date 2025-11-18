@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useAuth } from "../hook/useAuth";
 import { useNavigate } from "react-router-dom";
 import AuthForm from "../components/Auth/AuthForm";
+import Toast from "../components/UI/Toast";
+import useToast from "../hook/useToast";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -11,18 +13,24 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const { login, register, isLoading } = useAuth();
   const navigate = useNavigate();
-
+  const { toast, showToast, dismissToast } = useToast();
+  
   const handleLogin = async (e) => {
     e.preventDefault();
 
     try {
       console.log("🔐 Attempting login...");
       await login({ email, password });
-      console.log("✅ Login successful, redirecting...");
-      navigate("/home");
+      console.log("✅ Login successful");
+      showToast("Login successful", "success");
+      
+      // Esperar antes de navegar para que se vea el toast
+      setTimeout(() => {
+        navigate("/home");
+      }, 1500);
     } catch (error) {
       console.error("❌ Login error:", error);
-      alert("Login failed: " + (error.message || "Unknown error"));
+      showToast("Login failed: " + (error.message || "Unknown error"), "error");
     }
   };
 
@@ -30,18 +38,23 @@ const Auth = () => {
     e.preventDefault();
 
     if (!name || !surname || !email || !password) {
-      alert("Please fill in all fields");
+      showToast("Please fill in all fields", "error");
       return;
     }
 
     try {
       console.log("📝 Attempting registration...");
       await register({ name, surname, email, password });
-      console.log("✅ Registration successful, redirecting...");
-      navigate("/home");
+      console.log("✅ Registration successful");
+      showToast("Registration successful", "success");
+      
+      // Esperar antes de navegar para que se vea el toast
+      setTimeout(() => {
+        navigate("/home");
+      }, 1500);
     } catch (error) {
       console.error("❌ Registration error:", error);
-      alert("Registration failed: " + (error.message || "Unknown error"));
+      showToast("Registration failed: " + (error.message || "Unknown error"), "error");
     }
   };
 
@@ -95,6 +108,7 @@ const Auth = () => {
           </p>
         </div>
       </div>
+      <Toast toast={toast} onClose={dismissToast} />
     </div>
   );
 };

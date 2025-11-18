@@ -1,6 +1,6 @@
 import HeartIcon from "../../../icons/HeartIcon";
 
-const ProductDetailButtons = ({ product,handleAddToCart, handleAddToFavorites, isFavorite, favLoading }) => {
+const ProductDetailButtons = ({ product,handleAddToCart, handleAddToFavorites, isFavorite, favLoading, isAdding }) => {
     return (
             <div className="flex gap-4">
             <button
@@ -19,7 +19,8 @@ const ProductDetailButtons = ({ product,handleAddToCart, handleAddToFavorites, i
                 onClick={handleAddToCart}
                 className="flex-1 bg-black text-white px-6 py-4 rounded-lg font-medium transition-all duration-300 hover:bg-gray-800"
                 >
-                Add to Cart
+                {isAdding ? 'Adding to Cart...' : 'Add to Cart'}
+                
                 </button>
             </div>
             

@@ -2,7 +2,7 @@
 import Button from "../UI/Button";
 
 
-const CartProducts = ( { cartProducts , handleProductClick, handleQuantityChange, handleRemoveItem , handleClearCart} ) => {
+const CartProducts = ( { cartProducts , handleProductClick, handleQuantityChange, handleRemoveItem , handleClearCart } ) => {
     return(
         <div className="lg:col-span-2">
             <div className="space-y-4">

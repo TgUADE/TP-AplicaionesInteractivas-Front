@@ -9,6 +9,8 @@ import ProductDetailImages from "../components/Product/PorductDetail/ProductDeta
 import ProductDetailInfo from "../components/Product/PorductDetail/ProductDetailInfo";
 import ProductDetailButtons from "../components/Product/PorductDetail/ProductDetailButtons";
 import ProductDetailQuantitySelector from "../components/Product/PorductDetail/ProductDetailQuantitySelector";
+import Toast from "../components/UI/Toast";
+import useToast from "../hook/useToast";
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -16,13 +18,15 @@ const ProductDetail = () => {
   const { addToCart } = useCart();
   const { toggleFavorite, isFavorite, isLoading: favLoading } = useFavoritesContext();
   const { isLoggedIn } = useAuth();
+  const [isAdding, setIsAdding] = useState(false);
   
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const { toast, showToast, dismissToast } = useToast();
 
 
   useEffect(() => {
-    if (!isLoading && !product && !error) {
+    if (!isLoading && !product && error) {
       navigate('/products');
     }
   }, [product, isLoading, error, navigate]);
@@ -76,21 +80,46 @@ const ProductDetail = () => {
   };
 
 
-  const handleAddToCart = () => {
-    addToCart(product, quantity);
+  const handleAddToCart = async () => {
+    if (isAdding) return;
+    setIsAdding(true);
+    try {
+      await addToCart(product, quantity);
+      showToast("Product added to cart", "success");
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      showToast(
+        error?.message || "Failed to add product to cart.",
+        "error"
+      );
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   const handleAddToFavorites = async () => {
     if (!isLoggedIn) {
+      showToast("You must be logged in to manage favorites.", "error");
       navigate('/auth');
       return;
     }
 
     if (!product?.id) {
+      showToast("Product not found.", "error");
       return;
     }
-
-    await toggleFavorite(product.id);
+    try {
+      await toggleFavorite(product.id);
+      showToast(
+        isFavorite(product.id) ? "Removed from favorites." : "Added to favorites.",
+        "success"
+      );
+    } catch (error) {
+      showToast(
+        error?.message || "Failed to update favorites.",
+        "error"
+      );
+    }
   };
 
   return (
@@ -127,10 +156,12 @@ const ProductDetail = () => {
                   isFavorite={isFavorite}
                   favLoading={favLoading}
                   product={product}
+                  isAdding={isAdding}
                 />
           </div>
         </div>
       </div>
+      <Toast toast={toast} onClose={dismissToast} />
     </div>
   );
 };

@@ -80,12 +80,9 @@ export const useAuth = () => {
     // Limpiar auth
     dispatch(logoutAction());
 
-    console.log("✅ Logout completado - Redirigiendo a /home");
+    console.log("✅ Logout exitoso");
 
-    // Redirigir a home
-    setTimeout(() => {
-      window.location.href = "/home";
-    });
+    
   };
 
   return {

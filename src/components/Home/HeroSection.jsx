@@ -18,7 +18,8 @@ const HeroSection = ({ onClick }) => {
                     Created to change everything for the better. For everyone.
                 </p>
                 <button 
-                onClick={() => onClick("250bbd60-28b4-4328-8e03-2aed5a8b7e0a")} 
+                onClick={() => onClick("250bbd60-28b4-4328-8e03-2aed5a8b7e0a")}
+                
                 className="bg-transparent text-white border border-white px-6 py-3 rounded-md text-sm font-medium cursor-pointer transition-all duration-300 hover:bg-white hover:text-orange-500">
                     Buy Now
                 </button>

@@ -6,8 +6,7 @@ import UsersTab from "../../components/Admin/tabs/UsersTab";
 
 import { fetchAdminUsers } from "../../redux/slices/Admin/adminUsersSlice";
 import Toast from "../../components/UI/Toast";
-import useToast from "../../hooks/useToast";
-
+import  useToast  from "../../hook/useToast";
 const UsersAdmin = () => {
   const dispatch = useDispatch();
   const { toast, showToast, dismissToast } = useToast();

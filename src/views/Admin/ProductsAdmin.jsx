@@ -17,8 +17,7 @@ import {
 import { fetchProducts } from "../../redux/slices/productSlice";
 import { fetchCategories } from "../../redux/slices/categorySlice";
 import Toast from "../../components/UI/Toast";
-import useToast from "../../hooks/useToast";
-
+import  useToast  from "../../hook/useToast";
 const emptyProduct = {
   id: null,
   name: "",
