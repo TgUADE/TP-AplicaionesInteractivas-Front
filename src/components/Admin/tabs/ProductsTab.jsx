@@ -24,29 +24,29 @@ const ProductsTab = ({
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Productos</h1>
-          <p className="text-gray-500">Administra tus productos.</p>
+          <h1 className="text-2xl font-semibold">Product</h1>
+          <p className="text-gray-500">Manage your products.</p>
         </div>
         <Button
           onClick={onOpenCreate}
           className="bg-black text-white rounded-full px-6 h-10"
         >
-          Nuevo producto
+          New product
         </Button>
       </div>
 
       <div className="bg-white rounded-2xl border">
         {loading ? (
-          <div className="p-6">Cargando...</div>
+          <div className="p-6">Loading...</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3">Nombre</th>
-                  <th className="px-4 py-3">Precio</th>
+                  <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Price</th>
                   <th className="px-4 py-3">Stock</th>
-                  <th className="px-4 py-3">Categoría</th>
+                  <th className="px-4 py-3">Category</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -62,13 +62,13 @@ const ProductsTab = ({
                         onClick={() => onOpenImageModal(p)}
                         className="h-9 px-4 rounded-full border"
                       >
-                        Fotos
+                        Photos
                       </Button>
                       <Button
                         onClick={() => onOpenEdit(p)}
                         className="h-9 px-4 rounded-full border"
                       >
-                        Editar
+                        Edit
                       </Button>
                       <Button
                         onClick={() => onDeleteProduct(p.id)}
@@ -79,7 +79,7 @@ const ProductsTab = ({
                         {pendingDeleteId === p.id ? (
                           <LoadingSpinner size="small" color="white" />
                         ) : (
-                          "Eliminar"
+                          "Delete"
                         )}
                       </Button>
                     </td>
@@ -88,7 +88,7 @@ const ProductsTab = ({
                 {products.length === 0 && (
                   <tr>
                     <td className="px-4 py-6" colSpan={5}>
-                      Sin productos
+                      No products
                     </td>
                   </tr>
                 )}
@@ -100,17 +100,16 @@ const ProductsTab = ({
                       <div className="text-sm text-gray-600">
                         {products.length > 0 ? (
                           <>
-                            Mostrando{" "}
-                            <span className="font-medium">{from}</span>
+                            Showing <span className="font-medium">{from}</span>
                             {" - "}
                             <span className="font-medium">{to}</span>
-                            {" de "}
+                            {" of "}
                             <span className="font-medium">
                               {products.length}
                             </span>
                           </>
                         ) : (
-                          "Sin productos"
+                          "No products"
                         )}
                       </div>
 
@@ -121,7 +120,7 @@ const ProductsTab = ({
                           disabled={currentPage === 1}
                           className="h-9 px-3"
                         >
-                          Anterior
+                          Previous
                         </Button>
 
                         {Array.from(
@@ -147,7 +146,7 @@ const ProductsTab = ({
                           disabled={currentPage === totalPages}
                           className="h-9 px-3"
                         >
-                          Siguiente
+                          Next
                         </Button>
                       </div>
                     </div>

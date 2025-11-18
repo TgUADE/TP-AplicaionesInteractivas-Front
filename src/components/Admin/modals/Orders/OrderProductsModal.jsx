@@ -13,16 +13,16 @@ const OrderProductsModal = ({
   <Modal
     isOpen={isOpen}
     onClose={onClose}
-    title="Productos de la orden"
+    title="Products of the order"
     size="large"
   >
     <div className="overflow-x-auto">
       <table className="min-w-full text-left text-sm">
         <thead className="border-b bg-gray-50">
           <tr>
-            <th className="px-4 py-3">Producto</th>
-            <th className="px-4 py-3">Cantidad</th>
-            <th className="px-4 py-3">Precio</th>
+            <th className="px-4 py-3">Product</th>
+            <th className="px-4 py-3">Quantity</th>
+            <th className="px-4 py-3">Price</th>
             <th className="px-4 py-3">Subtotal</th>
           </tr>
         </thead>
@@ -48,7 +48,7 @@ const OrderProductsModal = ({
           ) : (
             <tr>
               <td className="px-4 py-6" colSpan={4}>
-                Sin productos
+                No products
               </td>
             </tr>
           )}
@@ -60,7 +60,7 @@ const OrderProductsModal = ({
         onClick={onClose}
         className="bg-black text-white rounded-full px-6 h-10"
       >
-        Cerrar
+        Close
       </Button>
     </div>
   </Modal>

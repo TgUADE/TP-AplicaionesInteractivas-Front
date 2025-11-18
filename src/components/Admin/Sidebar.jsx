@@ -1,17 +1,17 @@
 import { NavLink } from "react-router-dom";
 
 const TABS = [
-  { id: "productos", label: "Productos", to: "products" },
-  { id: "promociones", label: "Promociones", to: "promotions" },
-  { id: "categorias", label: "Categorías", to: "categories" },
-  { id: "usuarios", label: "Usuarios", to: "users" },
-  { id: "ordenes", label: "Ordenes", to: "orders" },
+  { id: "productos", label: "Products", to: "products" },
+  { id: "promociones", label: "Promotions", to: "promotions" },
+  { id: "categorias", label: "Categories", to: "categories" },
+  { id: "usuarios", label: "Users", to: "users" },
+  { id: "ordenes", label: "Orders", to: "orders" },
 ];
 
 const AdminSidebar = () => (
   <aside className="w-64 border-r">
     <div className="p-6 border-b">
-      <h2 className="text-xl font-semibold">Configuración</h2>
+      <h2 className="text-xl font-semibold">Configuration</h2>
     </div>
     <nav className="p-4 space-y-2">
       {TABS.map(({ id, label, to }) => (

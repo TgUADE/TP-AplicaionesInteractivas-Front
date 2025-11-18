@@ -10,34 +10,29 @@ const CategoryEditModal = ({
   onChange,
   onSubmit,
 }) => (
-  <Modal
-    isOpen={isOpen}
-    onClose={onClose}
-    title="Editar categoría"
-    size="medium"
-  >
+  <Modal isOpen={isOpen} onClose={onClose} title="Edit category" size="medium">
     <div className="space-y-4">
       <div>
-        <label className="block text-sm mb-1">Descripción</label>
+        <label className="block text-sm mb-1">Description</label>
         <Input
           type="text"
           value={form.description}
           onChange={(e) => onChange({ description: e.target.value })}
           className="h-10 rounded-md"
-          placeholder="Descripción"
+          placeholder="Category Description"
         />
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onClose} disabled={saving}>
-          Cancelar
+          Cancel
         </Button>
         <Button
           onClick={onSubmit}
           className="bg-black text-white rounded-full px-6 h-10"
           disabled={saving}
         >
-          {saving ? "Guardando..." : "Guardar cambios"}
+          {saving ? "Saving..." : "Save changes"}
         </Button>
       </div>
     </div>

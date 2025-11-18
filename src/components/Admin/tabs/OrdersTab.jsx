@@ -32,27 +32,27 @@ const OrdersTab = ({
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Ordenes</h1>
-          <p className="text-gray-500">Listado de todas las órdenes.</p>
+          <h1 className="text-2xl font-semibold">Orders</h1>
+          <p className="text-gray-500">List of all orders.</p>
         </div>
       </div>
 
       <div className="bg-white rounded-2xl border">
         {loading ? (
-          <div className="p-6">Cargando...</div>
+          <div className="p-6">Loading...</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3">Cliente</th>
+                  <th className="px-4 py-3">Customer</th>
                   <th className="px-4 py-3">Total</th>
-                  <th className="px-4 py-3">Metodo de Pago</th>
-                  <th className="px-4 py-3">Estado</th>
-                  <th className="px-4 py-3">Producto</th>
-                  <th className="px-4 py-3">Direccion Facturacion</th>
-                  <th className="px-4 py-3">Direccion Envio</th>
-                  <th className="px-4 py-3">Creada</th>
+                  <th className="px-4 py-3">Payment Method</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Product</th>
+                  <th className="px-4 py-3">Billing Address</th>
+                  <th className="px-4 py-3">Shipping Address</th>
+                  <th className="px-4 py-3">Created</th>
                 </tr>
               </thead>
               <tbody>
@@ -121,7 +121,7 @@ const OrdersTab = ({
                         <button
                           onClick={() => onOpenProducts(o)}
                           className="inline-flex items-center gap-2 text-blue-600 hover:underline"
-                          title="Ver productos de la orden"
+                          title="View products of the order"
                         >
                           <span className="inline-block">▶</span>
                           <span>
@@ -155,7 +155,7 @@ const OrdersTab = ({
                 {orders.length === 0 && (
                   <tr>
                     <td className="px-4 py-6" colSpan={8}>
-                      Sin órdenes
+                      No orders
                     </td>
                   </tr>
                 )}
@@ -167,15 +167,14 @@ const OrdersTab = ({
                       <div className="text-sm text-gray-600">
                         {orders.length > 0 ? (
                           <>
-                            Mostrando{" "}
-                            <span className="font-medium">{from}</span>
+                            Showing <span className="font-medium">{from}</span>
                             {" - "}
                             <span className="font-medium">{to}</span>
-                            {" de "}
+                            {" of "}
                             <span className="font-medium">{orders.length}</span>
                           </>
                         ) : (
-                          "Sin órdenes"
+                          "No orders"
                         )}
                       </div>
 
@@ -186,7 +185,7 @@ const OrdersTab = ({
                           disabled={currentPage === 1}
                           className="h-9 px-3"
                         >
-                          Anterior
+                          Previous
                         </Button>
 
                         {Array.from(
@@ -212,7 +211,7 @@ const OrdersTab = ({
                           disabled={currentPage === totalPages}
                           className="h-9 px-3"
                         >
-                          Siguiente
+                          Next
                         </Button>
                       </div>
                     </div>

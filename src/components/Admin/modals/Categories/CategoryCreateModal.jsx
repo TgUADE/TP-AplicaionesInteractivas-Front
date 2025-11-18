@@ -10,21 +10,16 @@ const CategoryCreateModal = ({
   onChange,
   onSubmit,
 }) => (
-  <Modal
-    isOpen={isOpen}
-    onClose={onClose}
-    title="Nueva categoría"
-    size="medium"
-  >
+  <Modal isOpen={isOpen} onClose={onClose} title="New category" size="medium">
     <div className="space-y-4">
       <div>
-        <label className="block text-sm mb-1">Descripción</label>
+        <label className="block text-sm mb-1">Description</label>
         <Input
           type="text"
           value={form.description}
           onChange={(e) => onChange({ description: e.target.value })}
           className="h-10 rounded-md"
-          placeholder="Electrónica"
+          placeholder="Category Description"
         />
       </div>
 
@@ -37,7 +32,7 @@ const CategoryCreateModal = ({
           className="bg-black text-white rounded-full px-6 h-10"
           disabled={saving}
         >
-          {saving ? "Guardando..." : "Guardar"}
+          {saving ? "Saving..." : "Save"}
         </Button>
       </div>
     </div>

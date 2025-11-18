@@ -13,9 +13,9 @@ import {
 const ordersPageSize = 20;
 
 const ORDER_STATUS_OPTIONS = [
-  { value: "PENDING", label: "PENDIENTE" },
-  { value: "SHIPPED", label: "ENVIADA" },
-  { value: "CANCELLED", label: "CANCELADA" },
+  { value: "PENDING", label: "PENDING" },
+  { value: "SHIPPED", label: "SHIPPED" },
+  { value: "CANCELLED", label: "CANCELLED" },
 ];
 
 const parseOrderItems = (order) => {

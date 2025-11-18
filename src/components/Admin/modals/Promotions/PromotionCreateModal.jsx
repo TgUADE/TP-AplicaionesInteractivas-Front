@@ -11,33 +11,33 @@ const PromotionCreateModal = ({
   onChange,
   onSubmit,
 }) => (
-  <Modal isOpen={isOpen} onClose={onClose} title="Nueva promoción" size="large">
+  <Modal isOpen={isOpen} onClose={onClose} title="New Promotion" size="large">
     <div className="space-y-4">
       <div>
-        <label className="block text-sm mb-1">Nombre</label>
+        <label className="block text-sm mb-1">Name</label>
         <Input
           type="text"
           value={form.name}
           onChange={(e) => onChange({ name: e.target.value })}
           className="h-10 rounded-md"
-          placeholder="Black Friday"
+          placeholder="Promotion Name"
         />
       </div>
 
       <div>
-        <label className="block text-sm mb-1">Descripción</label>
+        <label className="block text-sm mb-1">Description</label>
         <Input
           type="text"
           value={form.description}
           onChange={(e) => onChange({ description: e.target.value })}
           className="h-10 rounded-md"
-          placeholder="Descuento especial"
+          placeholder="Special discount"
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm mb-1">Tipo</label>
+          <label className="block text-sm mb-1">Type</label>
           <select
             className="border rounded-md h-10 px-3 w-full"
             value={form.type}
@@ -48,7 +48,7 @@ const PromotionCreateModal = ({
           </select>
         </div>
         <div>
-          <label className="block text-sm mb-1">Valor</label>
+          <label className="block text-sm mb-1">Value</label>
           <Input
             type="number"
             step="0.01"
@@ -62,7 +62,7 @@ const PromotionCreateModal = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm mb-1">Inicio</label>
+          <label className="block text-sm mb-1">Start date</label>
           <Input
             type="datetime-local"
             value={form.start_date}
@@ -71,7 +71,7 @@ const PromotionCreateModal = ({
           />
         </div>
         <div>
-          <label className="block text-sm mb-1">Fin</label>
+          <label className="block text-sm mb-1">End date</label>
           <Input
             type="datetime-local"
             value={form.end_date}
@@ -82,13 +82,13 @@ const PromotionCreateModal = ({
       </div>
 
       <div>
-        <label className="block text-sm mb-1">Producto</label>
+        <label className="block text-sm mb-1">Product</label>
         <select
           className="border rounded-md h-10 px-3 w-full"
           value={form.product_id}
           onChange={(e) => onChange({ product_id: e.target.value })}
         >
-          <option value="">Seleccione producto</option>
+          <option value="">Select product</option>
           {products.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -105,20 +105,20 @@ const PromotionCreateModal = ({
           onChange={(e) => onChange({ active: e.target.checked })}
         />
         <label htmlFor="promo-active" className="text-sm">
-          Activa
+          Active
         </label>
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onClose} disabled={saving}>
-          Cancelar
+          Cancel
         </Button>
         <Button
           onClick={onSubmit}
           className="bg-black text-white rounded-full px-6 h-10"
           disabled={saving}
         >
-          {saving ? "Guardando..." : "Guardar"}
+          {saving ? "Saving..." : "Save"}
         </Button>
       </div>
     </div>

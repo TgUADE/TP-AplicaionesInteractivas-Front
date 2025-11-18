@@ -10,26 +10,26 @@ const CategoriesTab = ({
   <div className="space-y-8">
     <div className="flex items-center justify-between">
       <div>
-        <h1 className="text-2xl font-semibold">Categorías</h1>
-        <p className="text-gray-500">Administra tus categorías.</p>
+        <h1 className="text-2xl font-semibold">Categories</h1>
+        <p className="text-gray-500">Manage your categories.</p>
       </div>
       <Button
         onClick={onOpenCreate}
         className="bg-black text-white rounded-full px-6 h-10"
       >
-        Nueva categoría
+        New category
       </Button>
     </div>
 
     <div className="bg-white rounded-2xl border">
       {loading ? (
-        <div className="p-6">Cargando...</div>
+        <div className="p-6">Loading...</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="border-b bg-gray-50">
               <tr>
-                <th className="px-4 py-3">Descripción</th>
+                <th className="px-4 py-3">Description</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -42,13 +42,13 @@ const CategoriesTab = ({
                       onClick={() => onOpenEdit(c)}
                       className="h-9 px-4 rounded-full border"
                     >
-                      Editar
+                      Edit
                     </Button>
                     <Button
                       onClick={() => onDelete(c.id)}
                       className="h-9 px-4 rounded-full border bg-red-600 text-white"
                     >
-                      Eliminar
+                      Delete
                     </Button>
                   </td>
                 </tr>
@@ -56,7 +56,7 @@ const CategoriesTab = ({
               {categories.length === 0 && (
                 <tr>
                   <td className="px-4 py-6" colSpan={2}>
-                    Sin categorías
+                    No categories
                   </td>
                 </tr>
               )}

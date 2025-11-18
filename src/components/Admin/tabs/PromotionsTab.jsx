@@ -14,32 +14,32 @@ const PromotionsTab = ({
   <div className="space-y-8">
     <div className="flex items-center justify-between">
       <div>
-        <h1 className="text-2xl font-semibold">Promociones</h1>
-        <p className="text-gray-500">Administra tus promociones.</p>
+        <h1 className="text-2xl font-semibold">Promotions</h1>
+        <p className="text-gray-500">Manage your promotions.</p>
       </div>
       <Button
         onClick={onOpenCreate}
         className="bg-black text-white rounded-full px-6 h-10"
       >
-        Nueva promoción
+        New promotion
       </Button>
     </div>
 
     <div className="bg-white rounded-2xl border">
       {loading ? (
-        <div className="p-6">Cargando...</div>
+        <div className="p-6">Loading...</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="border-b bg-gray-50">
               <tr>
-                <th className="px-4 py-3">Nombre</th>
-                <th className="px-4 py-3">Tipo</th>
-                <th className="px-4 py-3">Valor</th>
-                <th className="px-4 py-3">Producto</th>
-                <th className="px-4 py-3">Inicio</th>
-                <th className="px-4 py-3">Fin</th>
-                <th className="px-4 py-3">Activa</th>
+                <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">Value</th>
+                <th className="px-4 py-3">Product</th>
+                <th className="px-4 py-3">Start date</th>
+                <th className="px-4 py-3">End date</th>
+                <th className="px-4 py-3">Active</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -66,7 +66,7 @@ const PromotionsTab = ({
                     <td className="px-4 py-3">
                       {pr.active ? (
                         <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Sí
+                          Yes
                         </span>
                       ) : (
                         <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -79,7 +79,7 @@ const PromotionsTab = ({
                         onClick={() => onOpenEdit(pr)}
                         className="h-9 px-4 rounded-full border"
                       >
-                        Editar
+                        Edit
                       </Button>
                       {pr.active ? (
                         <Button
@@ -90,7 +90,7 @@ const PromotionsTab = ({
                           {isPending ? (
                             <LoadingSpinner size="small" color="gray" />
                           ) : (
-                            "Desactivar"
+                            "Deactivate"
                           )}
                         </Button>
                       ) : (
@@ -102,7 +102,7 @@ const PromotionsTab = ({
                           {isPending ? (
                             <LoadingSpinner size="small" color="gray" />
                           ) : (
-                            "Activar"
+                            "Activate"
                           )}
                         </Button>
                       )}
@@ -110,7 +110,7 @@ const PromotionsTab = ({
                         onClick={() => onDelete(pr.id)}
                         className="h-9 px-4 rounded-full border bg-red-600 text-white"
                       >
-                        Eliminar
+                        Delete
                       </Button>
                     </td>
                   </tr>
@@ -119,7 +119,7 @@ const PromotionsTab = ({
               {promotions.length === 0 && (
                 <tr>
                   <td className="px-4 py-6" colSpan={8}>
-                    Sin promociones
+                    No promotions
                   </td>
                 </tr>
               )}

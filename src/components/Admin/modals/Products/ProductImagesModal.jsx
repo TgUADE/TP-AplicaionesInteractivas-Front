@@ -24,14 +24,14 @@ const ProductImagesModal = ({
     onClose={onClose}
     title={
       product
-        ? `${editing ? "Editar" : "Subir"} imagen: ${product?.name ?? ""}`
-        : "Imágenes del producto"
+        ? `${editing ? "Edit" : "Upload"} image: ${product?.name ?? ""}`
+        : "Product images"
     }
     size="large"
     className="max-w-4xl"
   >
     <div className="space-y-2 mb-4">
-      <h4 className="text-sm font-semibold">Imágenes cargadas</h4>
+      <h4 className="text-sm font-semibold">Loaded images</h4>
 
       {product?.images?.length ? (
         <div className="overflow-x-auto border rounded-lg">
@@ -41,8 +41,8 @@ const ProductImagesModal = ({
                 <th className="px-3 py-2">Preview</th>
                 <th className="px-3 py-2">URL</th>
                 <th className="px-3 py-2">Alt</th>
-                <th className="px-3 py-2">Principal</th>
-                <th className="px-3 py-2">Orden</th>
+                <th className="px-3 py-2">Primary</th>
+                <th className="px-3 py-2">Order</th>
                 <th className="px-3 py-2"></th>
                 <th className="px-3 py-2"></th>
               </tr>
@@ -72,7 +72,7 @@ const ProductImagesModal = ({
                   <td className="px-3 py-2">
                     {img.isPrimary ? (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Sí
+                        Yes
                       </span>
                     ) : (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -82,7 +82,7 @@ const ProductImagesModal = ({
                   </td>
                   <td className="px-3 py-2">{img.displayOrder ?? "-"}</td>
                   <td className="px-3 py-2">
-                    <Button onClick={() => onOpenEditImage(img)}>Editar</Button>
+                    <Button onClick={() => onOpenEditImage(img)}>Edit</Button>
                   </td>
                   <td className="px-3 py-2">
                     <Button
@@ -90,9 +90,7 @@ const ProductImagesModal = ({
                       disabled={deletingImageId === img.id}
                       className="bg-red-600 text-white hover:bg-red-700"
                     >
-                      {deletingImageId === img.id
-                        ? "Eliminando..."
-                        : "Eliminar"}
+                      {deletingImageId === img.id ? "Deleting..." : "Delete"}
                     </Button>
                   </td>
                 </tr>
@@ -102,14 +100,14 @@ const ProductImagesModal = ({
         </div>
       ) : (
         <div className="text-sm text-gray-600 border rounded-md p-3">
-          Este producto aún no tiene imágenes.
+          This product has no images.
         </div>
       )}
     </div>
 
     <div className="space-y-4">
       <div>
-        <label className="block text-sm mb-1">URL de la imagen</label>
+        <label className="block text-sm mb-1">Image URL</label>
         <Input
           type="url"
           value={form.imageUrl}
@@ -126,13 +124,13 @@ const ProductImagesModal = ({
           value={form.altText}
           onChange={(e) => onChangeForm({ altText: e.target.value })}
           className="h-10 rounded-md"
-          placeholder="Imagen del producto"
+          placeholder="Product image"
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm mb-1">¿Es principal?</label>
+          <label className="block text-sm mb-1">Is primary?</label>
           <select
             className="border rounded-md h-10 px-3 w-full"
             value={String(form.isPrimary)}
@@ -140,12 +138,12 @@ const ProductImagesModal = ({
               onChangeForm({ isPrimary: e.target.value === "true" })
             }
           >
-            <option value="true">Sí</option>
+            <option value="true">Yes</option>
             <option value="false">No</option>
           </select>
         </div>
         <div>
-          <label className="block text-sm mb-1">Orden de visualización</label>
+          <label className="block text-sm mb-1">Display order</label>
           <Input
             type="number"
             value={form.displayOrder}
@@ -158,7 +156,7 @@ const ProductImagesModal = ({
 
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onClose} disabled={saving}>
-          Cancelar
+          Cancel
         </Button>
         <Button
           onClick={editing ? onEdit : onUpload}
@@ -167,11 +165,11 @@ const ProductImagesModal = ({
         >
           {saving
             ? editing
-              ? "Editando..."
-              : "Subiendo..."
+              ? "Editing..."
+              : "Uploading..."
             : editing
-            ? "Editar"
-            : "Subir"}
+            ? "Edit"
+            : "Upload"}
         </Button>
       </div>
     </div>
