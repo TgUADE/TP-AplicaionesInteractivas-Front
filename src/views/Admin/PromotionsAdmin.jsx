@@ -19,7 +19,7 @@ import {
   fetchPromotions as fetchPublicPromotions,
   productsOnSale as fetchProductsOnSale,
 } from "../../redux/slices/promotionSlice";
-import  useToast  from "../../hook/useToast";
+import useToast from "../../hook/useToast";
 import Toast from "../../components/UI/Toast";
 
 const emptyPromotion = {
@@ -70,12 +70,12 @@ const PromotionsAdmin = () => {
     try {
       await dispatch(fetchPublicPromotions()).unwrap();
     } catch (error) {
-      console.error("Error actualizando promociones públicas", error);
+      console.error("Error updating public promotions", error);
     }
     try {
       await dispatch(fetchProductsOnSale()).unwrap();
     } catch (error) {
-      console.error("Error actualizando productos en oferta", error);
+      console.error("Error updating products on sale", error);
     }
   };
 
@@ -92,13 +92,12 @@ const PromotionsAdmin = () => {
 
   useEffect(() => {
     if (!token) return;
-    dispatch(fetchAdminPromotions()).catch((error) => {
-      console.error("Error cargando promociones", error);
-      showToast(
-        error?.message || "No se pudieron cargar las promociones.",
-        "error"
-      );
-    });
+    dispatch(fetchAdminPromotions())
+      .unwrap()
+      .catch((error) => {
+        console.error("Error loading promotions", error);
+        showToast(error?.message || "Could not load promotions.", "error");
+      });
   }, [dispatch, showToast, token]);
 
   useEffect(() => {
@@ -107,11 +106,8 @@ const PromotionsAdmin = () => {
       dispatch(fetchProducts())
         .unwrap()
         .catch((error) => {
-          console.error("Error cargando productos", error);
-          showToast(
-            error?.message || "No se pudieron cargar los productos.",
-            "error"
-          );
+          console.error("Error loading products", error);
+          showToast(error?.message || "Could not load products.", "error");
         });
     }
   }, [dispatch, showToast, token, products.length]);
@@ -165,16 +161,16 @@ const PromotionsAdmin = () => {
       if (promotionForm.type === "PERCENTAGE") {
         if (isNaN(valueNum) || valueNum <= 0 || valueNum > 70) {
           openError(
-            "Error creando promoción",
-            "Para tipo PERCENTAGE, el valor debe ser entre 1 y 70."
+            "Error creating promotion",
+            "For type PERCENTAGE, the value must be between 1 and 70."
           );
           return;
         }
       } else if (promotionForm.type === "FIXED_AMOUNT") {
         if (isNaN(valueNum) || valueNum <= 0) {
           openError(
-            "Error creando promoción",
-            "Para tipo FIXED_AMOUNT, el valor debe ser mayor a 0."
+            "Error creating promotion",
+            "For type FIXED_AMOUNT, the value must be greater than 0."
           );
           return;
         }
@@ -191,23 +187,20 @@ const PromotionsAdmin = () => {
         active: promotionForm.active ?? true,
       };
 
-      await dispatch(createAdminPromotion(body));
+      await dispatch(createAdminPromotion(body)).unwrap();
       await refreshPublicPromotionData();
       setIsPromotionCreateOpen(false);
       setPromotionForm(emptyPromotion);
-      showToast("Promoción creada correctamente.", "success");
+      showToast("Promotion created successfully.", "success");
     } catch (error) {
-      openError(
-        "Error creando promoción",
-        error?.message || "Error desconocido"
-      );
+      openError("Error creating promotion", error?.message || "Unknown error");
     }
   };
 
   const updatePromotion = async () => {
     try {
       if (!promotionForm.id) {
-        openError("Error actualizando promoción", "Promoción inválida");
+        openError("Error updating promotion", "Invalid promotion");
         return;
       }
 
@@ -216,16 +209,16 @@ const PromotionsAdmin = () => {
       if (promotionForm.type === "PERCENTAGE") {
         if (isNaN(valueNum) || valueNum <= 0 || valueNum > 70) {
           openError(
-            "Error actualizando promoción",
-            "Para tipo PERCENTAGE, el valor debe ser entre 1 y 70."
+            "Error updating promotion",
+            "For type PERCENTAGE, the value must be between 1 and 70."
           );
           return;
         }
       } else if (promotionForm.type === "FIXED_AMOUNT") {
         if (isNaN(valueNum) || valueNum <= 0) {
           openError(
-            "Error actualizando promoción",
-            "Para tipo FIXED_AMOUNT, el valor debe ser mayor a 0."
+            "Error updating promotion",
+            "For type FIXED_AMOUNT, the value must be greater than 0."
           );
           return;
         }
@@ -247,40 +240,37 @@ const PromotionsAdmin = () => {
           promotionId: promotionForm.id,
           payload: body,
         })
-      );
+      ).unwrap();
       await refreshPublicPromotionData();
       setIsPromotionEditOpen(false);
       setPromotionForm(emptyPromotion);
-      showToast("Promoción actualizada correctamente.", "success");
+      showToast("Promotion updated successfully.", "success");
     } catch (error) {
-      openError(
-        "Error actualizando promoción",
-        error?.message || "Error desconocido"
-      );
+      openError("Error updating promotion", error?.message || "Unknown error");
     }
   };
 
   const deletePromotion = async (id) => {
-    if (!confirm("¿Eliminar promoción?")) return;
+    if (!confirm("Delete promotion?")) return;
     try {
-      await dispatch(deleteAdminPromotion(id));
+      await dispatch(deleteAdminPromotion(id)).unwrap();
       await refreshPublicPromotionData();
-      showToast("Promoción eliminada.", "success");
+      showToast("Promotion deleted.", "success");
     } catch (error) {
       console.error(error);
-      showToast(error?.message || "No se pudo eliminar la promoción.", "error");
+      showToast(error?.message || "Could not delete the promotion.", "error");
     }
   };
 
   const activatePromotion = async (id) => {
     try {
       setPendingPromotionId(id);
-      await dispatch(activateAdminPromotion(id));
+      await dispatch(activateAdminPromotion(id)).unwrap();
       await refreshPublicPromotionData();
-      showToast("Promoción activada.", "success");
+      showToast("Promotion activated.", "success");
     } catch (error) {
       console.error(error);
-      showToast(error?.message || "No se pudo activar la promoción.", "error");
+      showToast(error?.message || "Could not activate the promotion.", "error");
     } finally {
       setPendingPromotionId(null);
     }
@@ -289,13 +279,13 @@ const PromotionsAdmin = () => {
   const deactivatePromotion = async (id) => {
     try {
       setPendingPromotionId(id);
-      await dispatch(deactivateAdminPromotion(id));
+      await dispatch(deactivateAdminPromotion(id)).unwrap();
       await refreshPublicPromotionData();
-      showToast("Promoción desactivada.", "success");
+      showToast("Promotion deactivated.", "success");
     } catch (error) {
       console.error(error);
       showToast(
-        error?.message || "No se pudo desactivar la promoción.",
+        error?.message || "Could not deactivate the promotion.",
         "error"
       );
     } finally {

@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const getAuthHeaders = (state) => {
@@ -30,84 +30,22 @@ const initialState = {
   mutationError: null,
 };
 
-const adminOrdersSlice = createSlice({
-  name: "adminOrders",
-  initialState,
-  reducers: {
-    fetchStart(state) {
-      state.loading = state.items.length === 0;
-      state.error = null;
-    },
-    fetchSuccess(state, action) {
-      state.loading = false;
-      state.items = sortOrders(action.payload ?? []);
-    },
-    fetchFailure(state, action) {
-      state.loading = false;
-      state.error = action.payload ?? "Error inesperado";
-    },
-    mutationStart(state) {
-      state.mutationStatus = "loading";
-      state.mutationError = null;
-    },
-    mutationSuccess(state) {
-      state.mutationStatus = "succeeded";
-      state.mutationError = null;
-    },
-    mutationFailure(state, action) {
-      state.mutationStatus = "failed";
-      state.mutationError = action.payload ?? "Error inesperado";
-    },
-    orderStatusUpdated(state, action) {
-      const { orderId, payload } = action.payload || {};
-      if (!orderId) return;
-
-      state.items = sortOrders(
-        state.items.map((order) => {
-          const id = order?.id ?? order?.orderId ?? order?._id;
-          if (id !== orderId) return order;
-          const status =
-            payload?.status ?? payload?.state ?? order?.status ?? null;
-          return {
-            ...order,
-            ...(payload && typeof payload === "object" ? payload : {}),
-            status: status ?? order?.status,
-          };
-        })
-      );
-    },
-  },
-});
-
-const {
-  fetchStart,
-  fetchSuccess,
-  fetchFailure,
-  mutationStart,
-  mutationSuccess,
-  mutationFailure,
-  orderStatusUpdated,
-} = adminOrdersSlice.actions;
-
-export const fetchAdminOrders = () => async (dispatch, getState) => {
-  dispatch(fetchStart());
-  try {
-    const headers = getAuthHeaders(getState());
-    const { data } = await axios.get("/orders", { headers });
-    const orders = Array.isArray(data) ? data : [];
-    dispatch(fetchSuccess(orders));
-    return orders;
-  } catch (error) {
-    const message = getErrorMessage(error);
-    dispatch(fetchFailure(message));
-    throw new Error(message);
+export const fetchAdminOrders = createAsyncThunk(
+  "adminOrders/fetchAll",
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const headers = getAuthHeaders(getState());
+      const { data } = await axios.get("/orders", { headers });
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
   }
-};
+);
 
-export const updateAdminOrderStatus =
-  ({ orderId, status }) =>
-  async (dispatch, getState) => {
-    dispatch(mutationStart());
+export const updateAdminOrderStatus = createAsyncThunk(
+  "adminOrders/updateStatus",
+  async ({ orderId, status }, { getState, rejectWithValue }) => {
     try {
       const headers = getAuthHeaders(getState());
       const { data } = await axios.put(
@@ -116,19 +54,63 @@ export const updateAdminOrderStatus =
         { headers }
       );
       const payload = data && typeof data === "object" ? data : { status };
-      dispatch(
-        orderStatusUpdated({
-          orderId,
-          payload,
-        })
-      );
-      dispatch(mutationSuccess());
-      return payload;
+      return { orderId, payload };
     } catch (error) {
-      const message = getErrorMessage(error);
-      dispatch(mutationFailure(message));
-      throw new Error(message);
+      return rejectWithValue(getErrorMessage(error));
     }
-  };
+  }
+);
+
+const adminOrdersSlice = createSlice({
+  name: "adminOrders",
+  initialState,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchAdminOrders.pending, (state) => {
+        state.loading = state.items.length === 0;
+        state.error = null;
+      })
+      .addCase(fetchAdminOrders.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = sortOrders(
+          Array.isArray(action.payload) ? action.payload : []
+        );
+      })
+      .addCase(fetchAdminOrders.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.payload || action.error?.message || "Error inesperado";
+      })
+      .addCase(updateAdminOrderStatus.pending, (state) => {
+        state.mutationStatus = "loading";
+        state.mutationError = null;
+      })
+      .addCase(updateAdminOrderStatus.fulfilled, (state, action) => {
+        state.mutationStatus = "succeeded";
+        state.mutationError = null;
+        const { orderId, payload } = action.payload || {};
+        if (!orderId) return;
+        state.items = sortOrders(
+          state.items.map((order) => {
+            const id = order?.id ?? order?.orderId ?? order?._id;
+            if (id !== orderId) return order;
+            const status =
+              payload?.status ?? payload?.state ?? order?.status ?? null;
+            return {
+              ...order,
+              ...(payload && typeof payload === "object" ? payload : {}),
+              status: status ?? order?.status,
+            };
+          })
+        );
+      })
+      .addCase(updateAdminOrderStatus.rejected, (state, action) => {
+        state.mutationStatus = "failed";
+        state.mutationError =
+          action.payload || action.error?.message || "Error inesperado";
+      });
+  },
+});
 
 export default adminOrdersSlice.reducer;

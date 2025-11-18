@@ -17,7 +17,7 @@ import {
 import { fetchProducts } from "../../redux/slices/productSlice";
 import { fetchCategories } from "../../redux/slices/categorySlice";
 import Toast from "../../components/UI/Toast";
-import  useToast  from "../../hook/useToast";
+import useToast from "../../hook/useToast";
 const emptyProduct = {
   id: null,
   name: "",
@@ -157,7 +157,7 @@ const ProductsAdmin = () => {
         category_id: form.category_id,
       };
 
-      await dispatch(createAdminProduct(body));
+      await dispatch(createAdminProduct(body)).unwrap();
       setIsCreateOpen(false);
       setForm(emptyProduct);
       showToast("Producto guardado exitosamente.", "success");
@@ -171,11 +171,11 @@ const ProductsAdmin = () => {
   const updateProduct = async () => {
     try {
       if (!form.id) {
-        showToast("Producto inválido.", "error");
+        showToast("Invalid product.", "error");
         return;
       }
       if (!form.name || !form.price || !form.stock || !form.category_id) {
-        showToast("Completa nombre, precio, stock y categoría.", "error");
+        showToast("Complete name, price, stock and category.", "error");
         return;
       }
       const body = {
@@ -185,30 +185,29 @@ const ProductsAdmin = () => {
         stock: Number(form.stock),
         category_id: form.category_id,
       };
-      await dispatch(updateAdminProduct({ productId: form.id, payload: body }));
+      await dispatch(
+        updateAdminProduct({ productId: form.id, payload: body })
+      ).unwrap();
       setIsEditOpen(false);
       setForm(emptyProduct);
-      showToast("Producto actualizado correctamente.", "success");
+      showToast("Product updated successfully.", "success");
       await dispatch(fetchProducts()).unwrap();
     } catch (error) {
       console.error(error);
-      showToast(
-        error?.message || "No se pudo actualizar el producto.",
-        "error"
-      );
+      showToast(error?.message || "Could not update the product.", "error");
     }
   };
 
   const deleteProduct = async (id) => {
-    if (!confirm("¿Eliminar producto?")) return;
+    if (!confirm("Delete product?")) return;
     try {
       setPendingProductDeleteId(id);
-      await dispatch(deleteAdminProduct(id));
-      showToast("Producto eliminado.", "success");
+      await dispatch(deleteAdminProduct(id)).unwrap();
+      showToast("Product deleted.", "success");
       await dispatch(fetchProducts()).unwrap();
     } catch (error) {
       console.error(error);
-      showToast(error?.message || "No se pudo eliminar el producto.", "error");
+      showToast(error?.message || "Could not delete the product.", "error");
     } finally {
       setPendingProductDeleteId(null);
     }
@@ -217,11 +216,11 @@ const ProductsAdmin = () => {
   const uploadImage = async () => {
     try {
       if (!imageProduct?.id) {
-        showToast("Producto inválido.", "error");
+        showToast("Invalid product.", "error");
         return;
       }
       if (!imageForm.imageUrl) {
-        showToast("Ingresa la URL de la imagen.", "error");
+        showToast("Enter the image URL.", "error");
         return;
       }
       const body = {
@@ -232,13 +231,13 @@ const ProductsAdmin = () => {
       };
       await dispatch(
         uploadAdminProductImage({ productId: imageProduct.id, payload: body })
-      );
-      showToast("Imagen subida correctamente.", "success");
+      ).unwrap();
+      showToast("Image uploaded successfully.", "success");
       setIsImageOpen(false);
       await dispatch(fetchProducts()).unwrap();
     } catch (error) {
       console.error(error);
-      showToast(error?.message || "No se pudo subir la imagen.", "error");
+      showToast(error?.message || "Could not upload the image.", "error");
     }
   };
 
@@ -255,21 +254,21 @@ const ProductsAdmin = () => {
             displayOrder: Number(imageForm.displayOrder),
           },
         })
-      );
-      showToast("Imagen editada correctamente.", "success");
+      ).unwrap();
+      showToast("Image edited successfully.", "success");
       setIsImageOpen(false);
       await dispatch(fetchProducts()).unwrap();
     } catch (error) {
-      showToast(error?.message || "No se pudo editar la imagen.", "error");
+      showToast(error?.message || "Could not edit the image.", "error");
     }
   };
 
   const deleteImage = async (imageId) => {
     if (!imageProduct?.id) {
-      showToast("Producto inválido.", "error");
+      showToast("Invalid product.", "error");
       return;
     }
-    if (!confirm("¿Eliminar imagen?")) return;
+    if (!confirm("Delete image?")) return;
     try {
       setDeletingImageId(imageId);
       await dispatch(
@@ -277,13 +276,13 @@ const ProductsAdmin = () => {
           productId: imageProduct.id,
           imageId: imageId,
         })
-      );
-      showToast("Imagen eliminada.", "success");
+      ).unwrap();
+      showToast("Image deleted.", "success");
       setIsImageOpen(false);
       await dispatch(fetchProducts()).unwrap();
     } catch (error) {
       console.error(error);
-      showToast(error?.message || "No se pudo eliminar la imagen.", "error");
+      showToast(error?.message || "Could not delete the image.", "error");
     } finally {
       setDeletingImageId(null);
     }

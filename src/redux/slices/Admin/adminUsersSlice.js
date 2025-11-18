@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const api = axios.create({
@@ -17,6 +17,19 @@ const getErrorMessage = (error) =>
   error?.message ||
   "Error inesperado";
 
+export const fetchAdminUsers = createAsyncThunk(
+  "adminUsers/fetchAll",
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const headers = getAuthHeaders(getState());
+      const { data } = await api.get("/users", { headers });
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  }
+);
+
 const initialState = {
   items: [],
   loading: false,
@@ -26,36 +39,23 @@ const initialState = {
 const adminUsersSlice = createSlice({
   name: "adminUsers",
   initialState,
-  reducers: {
-    fetchStart(state) {
-      state.loading = state.items.length === 0;
-      state.error = null;
-    },
-    fetchSuccess(state, action) {
-      state.loading = false;
-      state.items = Array.isArray(action.payload) ? action.payload : [];
-    },
-    fetchFailure(state, action) {
-      state.loading = false;
-      state.error = action.payload ?? "Error inesperado";
-    },
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchAdminUsers.pending, (state) => {
+        state.loading = state.items.length === 0;
+        state.error = null;
+      })
+      .addCase(fetchAdminUsers.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = Array.isArray(action.payload) ? action.payload : [];
+      })
+      .addCase(fetchAdminUsers.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.payload || action.error?.message || "Error inesperado";
+      });
   },
 });
-
-const { fetchStart, fetchSuccess, fetchFailure } = adminUsersSlice.actions;
-
-export const fetchAdminUsers = () => async (dispatch, getState) => {
-  dispatch(fetchStart());
-  try {
-    const headers = getAuthHeaders(getState());
-    const { data } = await api.get("/users", { headers });
-    dispatch(fetchSuccess(data));
-    return data;
-  } catch (error) {
-    const message = getErrorMessage(error);
-    dispatch(fetchFailure(message));
-    throw new Error(message);
-  }
-};
 
 export default adminUsersSlice.reducer;

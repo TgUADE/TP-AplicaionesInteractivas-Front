@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const api = axios.create({
@@ -26,6 +26,94 @@ const sortPromotions = (promotions = []) =>
         new Date(a?.createdAt || a?.created_at || 0)
     );
 
+export const fetchAdminPromotions = createAsyncThunk(
+  "adminPromotions/fetchAll",
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const headers = getAuthHeaders(getState());
+      const { data } = await api.get("/promotions", { headers });
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  }
+);
+
+export const createAdminPromotion = createAsyncThunk(
+  "adminPromotions/create",
+  async (payload, { getState, rejectWithValue }) => {
+    try {
+      const headers = getAuthHeaders(getState());
+      const { data } = await api.post("/promotions", payload, { headers });
+      return data;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  }
+);
+
+export const updateAdminPromotion = createAsyncThunk(
+  "adminPromotions/update",
+  async ({ promotionId, payload }, { getState, rejectWithValue }) => {
+    try {
+      const headers = getAuthHeaders(getState());
+      const { data } = await api.put(`/promotions/${promotionId}`, payload, {
+        headers,
+      });
+      return data;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  }
+);
+
+export const deleteAdminPromotion = createAsyncThunk(
+  "adminPromotions/delete",
+  async (promotionId, { getState, rejectWithValue }) => {
+    try {
+      const headers = getAuthHeaders(getState());
+      await api.delete(`/promotions/${promotionId}`, { headers });
+      return promotionId;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  }
+);
+
+export const activateAdminPromotion = createAsyncThunk(
+  "adminPromotions/activate",
+  async (promotionId, { getState, rejectWithValue }) => {
+    try {
+      const headers = getAuthHeaders(getState());
+      const { data } = await api.put(
+        `/promotions/${promotionId}/activate`,
+        {},
+        { headers }
+      );
+      return data ?? { id: promotionId, active: true };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  }
+);
+
+export const deactivateAdminPromotion = createAsyncThunk(
+  "adminPromotions/deactivate",
+  async (promotionId, { getState, rejectWithValue }) => {
+    try {
+      const headers = getAuthHeaders(getState());
+      const { data } = await api.put(
+        `/promotions/${promotionId}/deactivate`,
+        {},
+        { headers }
+      );
+      return data ?? { id: promotionId, active: false };
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  }
+);
+
 const initialState = {
   items: [],
   loading: false,
@@ -37,183 +125,122 @@ const initialState = {
 const adminPromotionsSlice = createSlice({
   name: "adminPromotions",
   initialState,
-  reducers: {
-    resetAdminPromotionsState(state) {
-      state.mutationStatus = "idle";
-      state.mutationError = null;
-    },
-    fetchStart(state) {
-      state.loading = true;
-      state.error = null;
-    },
-    fetchSuccess(state, action) {
-      state.loading = false;
-      state.items = sortPromotions(action.payload ?? []);
-    },
-    fetchFailure(state, action) {
-      state.loading = false;
-      state.error = action.payload ?? "Error inesperado";
-    },
-    mutationStart(state) {
-      state.mutationStatus = "loading";
-      state.mutationError = null;
-    },
-    mutationSuccess(state) {
-      state.mutationStatus = "succeeded";
-      state.mutationError = null;
-    },
-    mutationFailure(state, action) {
-      state.mutationStatus = "failed";
-      state.mutationError = action.payload ?? "Error inesperado";
-    },
-    promotionAdded(state, action) {
-      const promotion = action.payload;
-      if (promotion && typeof promotion === "object") {
-        state.items = sortPromotions([promotion, ...state.items]);
-      }
-    },
-    promotionUpdated(state, action) {
-      const promotion = action.payload;
-      if (promotion?.id) {
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchAdminPromotions.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAdminPromotions.fulfilled, (state, action) => {
+        state.loading = false;
         state.items = sortPromotions(
-          state.items.map((item) =>
-            item.id === promotion.id ? { ...item, ...promotion } : item
-          )
+          Array.isArray(action.payload) ? action.payload : []
         );
-      }
-    },
-    promotionRemoved(state, action) {
-      const promotionId = action.payload;
-      state.items = state.items.filter(
-        (promotion) => promotion.id !== promotionId
-      );
-    },
+      })
+      .addCase(fetchAdminPromotions.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.payload || action.error?.message || "Error inesperado";
+      })
+      .addCase(createAdminPromotion.pending, (state) => {
+        state.mutationStatus = "loading";
+        state.mutationError = null;
+      })
+      .addCase(createAdminPromotion.fulfilled, (state, action) => {
+        state.mutationStatus = "succeeded";
+        state.mutationError = null;
+        const promotion = action.payload;
+        if (promotion && typeof promotion === "object") {
+          state.items = sortPromotions([promotion, ...state.items]);
+        }
+      })
+      .addCase(createAdminPromotion.rejected, (state, action) => {
+        state.mutationStatus = "failed";
+        state.mutationError =
+          action.payload || action.error?.message || "Error inesperado";
+      })
+      .addCase(updateAdminPromotion.pending, (state) => {
+        state.mutationStatus = "loading";
+        state.mutationError = null;
+      })
+      .addCase(updateAdminPromotion.fulfilled, (state, action) => {
+        state.mutationStatus = "succeeded";
+        state.mutationError = null;
+        const promotion = action.payload;
+        if (promotion?.id) {
+          state.items = sortPromotions(
+            state.items.map((item) =>
+              item.id === promotion.id ? { ...item, ...promotion } : item
+            )
+          );
+        }
+      })
+      .addCase(updateAdminPromotion.rejected, (state, action) => {
+        state.mutationStatus = "failed";
+        state.mutationError =
+          action.payload || action.error?.message || "Error inesperado";
+      })
+      .addCase(deleteAdminPromotion.pending, (state) => {
+        state.mutationStatus = "loading";
+        state.mutationError = null;
+      })
+      .addCase(deleteAdminPromotion.fulfilled, (state, action) => {
+        state.mutationStatus = "succeeded";
+        state.mutationError = null;
+        const promotionId = action.payload;
+        state.items = state.items.filter(
+          (promotion) => promotion.id !== promotionId
+        );
+      })
+      .addCase(deleteAdminPromotion.rejected, (state, action) => {
+        state.mutationStatus = "failed";
+        state.mutationError =
+          action.payload || action.error?.message || "Error inesperado";
+      })
+      .addCase(activateAdminPromotion.pending, (state) => {
+        state.mutationStatus = "loading";
+        state.mutationError = null;
+      })
+      .addCase(activateAdminPromotion.fulfilled, (state, action) => {
+        state.mutationStatus = "succeeded";
+        state.mutationError = null;
+        const promotion = action.payload;
+        if (promotion?.id) {
+          state.items = sortPromotions(
+            state.items.map((item) =>
+              item.id === promotion.id ? { ...item, ...promotion } : item
+            )
+          );
+        }
+      })
+      .addCase(activateAdminPromotion.rejected, (state, action) => {
+        state.mutationStatus = "failed";
+        state.mutationError =
+          action.payload || action.error?.message || "Error inesperado";
+      })
+      .addCase(deactivateAdminPromotion.pending, (state) => {
+        state.mutationStatus = "loading";
+        state.mutationError = null;
+      })
+      .addCase(deactivateAdminPromotion.fulfilled, (state, action) => {
+        state.mutationStatus = "succeeded";
+        state.mutationError = null;
+        const promotion = action.payload;
+        if (promotion?.id) {
+          state.items = sortPromotions(
+            state.items.map((item) =>
+              item.id === promotion.id ? { ...item, ...promotion } : item
+            )
+          );
+        }
+      })
+      .addCase(deactivateAdminPromotion.rejected, (state, action) => {
+        state.mutationStatus = "failed";
+        state.mutationError =
+          action.payload || action.error?.message || "Error inesperado";
+      });
   },
 });
-
-export const { resetAdminPromotionsState } = adminPromotionsSlice.actions;
-
-const {
-  fetchStart,
-  fetchSuccess,
-  fetchFailure,
-  mutationStart,
-  mutationSuccess,
-  mutationFailure,
-  promotionAdded,
-  promotionUpdated,
-  promotionRemoved,
-} = adminPromotionsSlice.actions;
-
-export const fetchAdminPromotions = () => async (dispatch, getState) => {
-  dispatch(fetchStart());
-  try {
-    const headers = getAuthHeaders(getState());
-    const { data } = await api.get("/promotions", { headers });
-    const promotions = Array.isArray(data) ? data : [];
-    dispatch(fetchSuccess(promotions));
-    return promotions;
-  } catch (error) {
-    const message = getErrorMessage(error);
-    dispatch(fetchFailure(message));
-    throw new Error(message);
-  }
-};
-
-export const createAdminPromotion = (payload) => async (dispatch, getState) => {
-  dispatch(mutationStart());
-  try {
-    const headers = getAuthHeaders(getState());
-    const { data } = await api.post("/promotions", payload, { headers });
-    if (data && typeof data === "object") {
-      dispatch(promotionAdded(data));
-    }
-    dispatch(mutationSuccess());
-    return data;
-  } catch (error) {
-    const message = getErrorMessage(error);
-    dispatch(mutationFailure(message));
-    throw new Error(message);
-  }
-};
-
-export const updateAdminPromotion =
-  ({ promotionId, payload }) =>
-  async (dispatch, getState) => {
-    dispatch(mutationStart());
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await api.put(`/promotions/${promotionId}`, payload, {
-        headers,
-      });
-      if (data && typeof data === "object") {
-        dispatch(promotionUpdated(data));
-      }
-      dispatch(mutationSuccess());
-      return data;
-    } catch (error) {
-      const message = getErrorMessage(error);
-      dispatch(mutationFailure(message));
-      throw new Error(message);
-    }
-  };
-
-export const deleteAdminPromotion =
-  (promotionId) => async (dispatch, getState) => {
-    dispatch(mutationStart());
-    try {
-      const headers = getAuthHeaders(getState());
-      await api.delete(`/promotions/${promotionId}`, { headers });
-      dispatch(promotionRemoved(promotionId));
-      dispatch(mutationSuccess());
-      return promotionId;
-    } catch (error) {
-      const message = getErrorMessage(error);
-      dispatch(mutationFailure(message));
-      throw new Error(message);
-    }
-  };
-
-export const activateAdminPromotion =
-  (promotionId) => async (dispatch, getState) => {
-    dispatch(mutationStart());
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await api.put(
-        `/promotions/${promotionId}/activate`,
-        {},
-        { headers }
-      );
-      const promotion = data ?? { id: promotionId, active: true };
-      dispatch(promotionUpdated(promotion));
-      dispatch(mutationSuccess());
-      return promotion;
-    } catch (error) {
-      const message = getErrorMessage(error);
-      dispatch(mutationFailure(message));
-      throw new Error(message);
-    }
-  };
-
-export const deactivateAdminPromotion =
-  (promotionId) => async (dispatch, getState) => {
-    dispatch(mutationStart());
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await api.put(
-        `/promotions/${promotionId}/deactivate`,
-        {},
-        { headers }
-      );
-      const promotion = data ?? { id: promotionId, active: false };
-      dispatch(promotionUpdated(promotion));
-      dispatch(mutationSuccess());
-      return promotion;
-    } catch (error) {
-      const message = getErrorMessage(error);
-      dispatch(mutationFailure(message));
-      throw new Error(message);
-    }
-  };
 
 export default adminPromotionsSlice.reducer;

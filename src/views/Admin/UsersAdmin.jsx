@@ -6,7 +6,7 @@ import UsersTab from "../../components/Admin/tabs/UsersTab";
 
 import { fetchAdminUsers } from "../../redux/slices/Admin/adminUsersSlice";
 import Toast from "../../components/UI/Toast";
-import  useToast  from "../../hook/useToast";
+import useToast from "../../hook/useToast";
 const UsersAdmin = () => {
   const dispatch = useDispatch();
   const { toast, showToast, dismissToast } = useToast();
@@ -15,13 +15,12 @@ const UsersAdmin = () => {
     useSelector((state) => state.adminUsers) ?? {};
 
   useEffect(() => {
-    dispatch(fetchAdminUsers()).catch((error) => {
-      console.error("Error cargando usuarios", error);
-      showToast(
-        error?.message || "No se pudieron cargar los usuarios.",
-        "error"
-      );
-    });
+    dispatch(fetchAdminUsers())
+      .unwrap()
+      .catch((error) => {
+        console.error("Error loading users", error);
+        showToast(error?.message || "Could not load users.", "error");
+      });
   }, [dispatch, showToast]);
 
   const handleExport = () => {

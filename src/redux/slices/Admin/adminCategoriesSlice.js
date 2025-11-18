@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const api = axios.create({
@@ -17,8 +17,64 @@ const getErrorMessage = (error) =>
   error?.message ||
   "Error inesperado";
 
+export const fetchAdminCategories = createAsyncThunk(
+  "adminCategories/fetchAll",
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const headers = getAuthHeaders(getState());
+      const { data } = await api.get("/categories", { headers });
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  }
+);
+
+export const createAdminCategory = createAsyncThunk(
+  "adminCategories/create",
+  async (payload, { getState, rejectWithValue }) => {
+    try {
+      const headers = getAuthHeaders(getState());
+      const { data } = await api.post("/categories", payload, { headers });
+      return data;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  }
+);
+
+export const updateAdminCategory = createAsyncThunk(
+  "adminCategories/update",
+  async ({ categoryId, payload }, { getState, rejectWithValue }) => {
+    try {
+      const headers = getAuthHeaders(getState());
+      const { data } = await api.put(`/categories/${categoryId}`, payload, {
+        headers,
+      });
+      return data;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  }
+);
+
+export const deleteAdminCategory = createAsyncThunk(
+  "adminCategories/delete",
+  async (categoryId, { getState, rejectWithValue }) => {
+    try {
+      const headers = getAuthHeaders(getState());
+      await api.delete(`/categories/${categoryId}`, { headers });
+      return categoryId;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  }
+);
+
 const initialState = {
   items: [],
+  loading: false,
+  error: null,
   mutationStatus: "idle",
   mutationError: null,
 };
@@ -26,109 +82,76 @@ const initialState = {
 const adminCategoriesSlice = createSlice({
   name: "adminCategories",
   initialState,
-  reducers: {
-    resetMutationState(state) {
-      state.mutationStatus = "idle";
-      state.mutationError = null;
-    },
-    mutationStart(state) {
-      state.mutationStatus = "loading";
-      state.mutationError = null;
-    },
-    mutationSuccess(state) {
-      state.mutationStatus = "succeeded";
-      state.mutationError = null;
-    },
-    mutationFailure(state, action) {
-      state.mutationStatus = "failed";
-      state.mutationError = action.payload ?? "Error inesperado";
-    },
-    categoryAdded(state, action) {
-      const category = action.payload;
-      if (category && typeof category === "object") {
-        state.items.unshift(category);
-      }
-    },
-    categoryUpdated(state, action) {
-      const category = action.payload;
-      if (category?.id) {
-        state.items = state.items.map((item) =>
-          item.id === category.id ? { ...item, ...category } : item
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchAdminCategories.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAdminCategories.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = Array.isArray(action.payload) ? action.payload : [];
+      })
+      .addCase(fetchAdminCategories.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.payload || action.error?.message || "Error inesperado";
+      })
+      .addCase(createAdminCategory.pending, (state) => {
+        state.mutationStatus = "loading";
+        state.mutationError = null;
+      })
+      .addCase(createAdminCategory.fulfilled, (state, action) => {
+        state.mutationStatus = "succeeded";
+        state.mutationError = null;
+        const category = action.payload;
+        if (category && typeof category === "object") {
+          state.items.unshift(category);
+        }
+      })
+      .addCase(createAdminCategory.rejected, (state, action) => {
+        state.mutationStatus = "failed";
+        state.mutationError =
+          action.payload || action.error?.message || "Error inesperado";
+      })
+      .addCase(updateAdminCategory.pending, (state) => {
+        state.mutationStatus = "loading";
+        state.mutationError = null;
+      })
+      .addCase(updateAdminCategory.fulfilled, (state, action) => {
+        state.mutationStatus = "succeeded";
+        state.mutationError = null;
+        const category = action.payload;
+        if (category?.id) {
+          state.items = state.items.map((item) =>
+            item.id === category.id ? { ...item, ...category } : item
+          );
+        }
+      })
+      .addCase(updateAdminCategory.rejected, (state, action) => {
+        state.mutationStatus = "failed";
+        state.mutationError =
+          action.payload || action.error?.message || "Error inesperado";
+      })
+      .addCase(deleteAdminCategory.pending, (state) => {
+        state.mutationStatus = "loading";
+        state.mutationError = null;
+      })
+      .addCase(deleteAdminCategory.fulfilled, (state, action) => {
+        state.mutationStatus = "succeeded";
+        state.mutationError = null;
+        const categoryId = action.payload;
+        state.items = state.items.filter(
+          (category) => category.id !== categoryId
         );
-      }
-    },
-    categoryDeleted(state, action) {
-      const categoryId = action.payload;
-      state.items = state.items.filter(
-        (category) => category.id !== categoryId
-      );
-    },
+      })
+      .addCase(deleteAdminCategory.rejected, (state, action) => {
+        state.mutationStatus = "failed";
+        state.mutationError =
+          action.payload || action.error?.message || "Error inesperado";
+      });
   },
 });
-
-export const { resetMutationState } = adminCategoriesSlice.actions;
-
-const {
-  mutationStart,
-  mutationSuccess,
-  mutationFailure,
-  categoryAdded,
-  categoryUpdated,
-  categoryDeleted,
-} = adminCategoriesSlice.actions;
-
-export const createAdminCategory = (payload) => async (dispatch, getState) => {
-  dispatch(mutationStart());
-  try {
-    const headers = getAuthHeaders(getState());
-    const { data } = await api.post("/categories", payload, { headers });
-    if (data && typeof data === "object") {
-      dispatch(categoryAdded(data));
-    }
-    dispatch(mutationSuccess());
-    return data;
-  } catch (error) {
-    const message = getErrorMessage(error);
-    dispatch(mutationFailure(message));
-    throw new Error(message);
-  }
-};
-
-export const updateAdminCategory =
-  ({ categoryId, payload }) =>
-  async (dispatch, getState) => {
-    dispatch(mutationStart());
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await api.put(`/categories/${categoryId}`, payload, {
-        headers,
-      });
-      if (data && typeof data === "object") {
-        dispatch(categoryUpdated(data));
-      }
-      dispatch(mutationSuccess());
-      return data;
-    } catch (error) {
-      const message = getErrorMessage(error);
-      dispatch(mutationFailure(message));
-      throw new Error(message);
-    }
-  };
-
-export const deleteAdminCategory =
-  (categoryId) => async (dispatch, getState) => {
-    dispatch(mutationStart());
-    try {
-      const headers = getAuthHeaders(getState());
-      await api.delete(`/categories/${categoryId}`, { headers });
-      dispatch(categoryDeleted(categoryId));
-      dispatch(mutationSuccess());
-      return categoryId;
-    } catch (error) {
-      const message = getErrorMessage(error);
-      dispatch(mutationFailure(message));
-      throw new Error(message);
-    }
-  };
 
 export default adminCategoriesSlice.reducer;

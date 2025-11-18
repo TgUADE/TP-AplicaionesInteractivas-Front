@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import OrdersTab from "../../components/Admin/tabs/OrdersTab";
 import OrderProductsModal from "../../components/Admin/modals/Orders/OrderProductsModal";
 import Toast from "../../components/UI/Toast";
-import  useToast  from "../../hook/useToast";
+import useToast from "../../hook/useToast";
 import {
   fetchAdminOrders,
   updateAdminOrderStatus,
@@ -59,13 +59,12 @@ const OrdersAdmin = () => {
   );
 
   useEffect(() => {
-    dispatch(fetchAdminOrders()).catch((error) => {
-      console.error("Error cargando órdenes", error);
-      showToast(
-        error?.message || "No se pudieron cargar las órdenes.",
-        "error"
-      );
-    });
+    dispatch(fetchAdminOrders())
+      .unwrap()
+      .catch((error) => {
+        console.error("Error loading orders", error);
+        showToast(error?.message || "Could not load orders.", "error");
+      });
   }, [dispatch, showToast]);
 
   useEffect(() => {
@@ -150,12 +149,12 @@ const OrdersAdmin = () => {
             orderId: id,
             status: nextStatus,
           })
-        );
-        showToast("Estado de la orden actualizado.", "success");
+        ).unwrap();
+        showToast("Order status updated.", "success");
       } catch (error) {
         console.error(error);
         showToast(
-          error?.message || "No se pudo actualizar el estado de la orden.",
+          error?.message || "Could not update the order status.",
           "error"
         );
       } finally {

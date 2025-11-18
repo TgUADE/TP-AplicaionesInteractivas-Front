@@ -5,7 +5,7 @@ import CategoriesTab from "../../components/Admin/tabs/CategoriesTab";
 import CategoryCreateModal from "../../components/Admin/modals/Categories/CategoryCreateModal";
 import CategoryEditModal from "../../components/Admin/modals/Categories/CategoryEditModal";
 import Toast from "../../components/UI/Toast";
-import useToast  from "../../hook/useToast";
+import useToast from "../../hook/useToast";
 import { fetchCategories } from "../../redux/slices/categorySlice";
 import {
   createAdminCategory,
@@ -41,11 +41,8 @@ const CategoriesAdmin = () => {
     dispatch(fetchCategories())
       .unwrap()
       .catch((error) => {
-        console.error("Error cargando categorías", error);
-        showToast(
-          error?.message || "No se pudieron cargar las categorías.",
-          "error"
-        );
+        console.error("Error loading categories", error);
+        showToast(error?.message || "Could not load categories.", "error");
       });
   }, [dispatch, showToast, token]);
 
@@ -65,32 +62,32 @@ const CategoriesAdmin = () => {
   const saveCategory = async () => {
     try {
       if (!categoryForm.description?.trim()) {
-        showToast("Ingresa una descripción.", "error");
+        showToast("Enter a description.", "error");
         return;
       }
       await dispatch(
         createAdminCategory({
           description: categoryForm.description.trim(),
         })
-      );
+      ).unwrap();
       await dispatch(fetchCategories()).unwrap();
       setIsCategoryCreateOpen(false);
       setCategoryForm(emptyCategory);
-      showToast("Categoría creada correctamente.", "success");
+      showToast("Category created successfully.", "success");
     } catch (error) {
       console.error(error);
-      showToast(error?.message || "No se pudo crear la categoría.", "error");
+      showToast(error?.message || "Could not create the category.", "error");
     }
   };
 
   const updateCategory = async () => {
     try {
       if (!categoryForm.id) {
-        showToast("Categoría inválida.", "error");
+        showToast("Invalid category.", "error");
         return;
       }
       if (!categoryForm.description?.trim()) {
-        showToast("Ingresa una descripción.", "error");
+        showToast("Enter a description.", "error");
         return;
       }
       await dispatch(
@@ -100,29 +97,26 @@ const CategoriesAdmin = () => {
             description: categoryForm.description.trim(),
           },
         })
-      );
+      ).unwrap();
       await dispatch(fetchCategories()).unwrap();
       setIsCategoryEditOpen(false);
       setCategoryForm(emptyCategory);
-      showToast("Categoría actualizada correctamente.", "success");
+      showToast("Category updated successfully.", "success");
     } catch (error) {
       console.error(error);
-      showToast(
-        error?.message || "No se pudo actualizar la categoría.",
-        "error"
-      );
+      showToast(error?.message || "Could not update the category.", "error");
     }
   };
 
   const deleteCategoryById = async (id) => {
-    if (!confirm("¿Eliminar categoría?")) return;
+    if (!confirm("Delete category?")) return;
     try {
-      await dispatch(deleteAdminCategory(id));
+      await dispatch(deleteAdminCategory(id)).unwrap();
       await dispatch(fetchCategories()).unwrap();
-      showToast("Categoría eliminada.", "success");
+      showToast("Category deleted.", "success");
     } catch (error) {
       console.error(error);
-      showToast(error?.message || "No se pudo eliminar la categoría.", "error");
+      showToast(error?.message || "Could not delete the category.", "error");
     }
   };
 
