@@ -38,7 +38,7 @@ const getItemName = (item) =>
   item?.name ??
   item?.product?.name ??
   item?.product_title ??
-  `Producto ${item?.product_id ?? ""}`;
+  `Product ${item?.product_id ?? ""}`;
 
 const getItemQty = (item) =>
   Number(
@@ -75,7 +75,7 @@ const formatMoney = (value) => {
 };
 
 const formatDate = (value) =>
-  value ? new Date(value).toLocaleString() : "Fecha no disponible";
+  value ? new Date(value).toLocaleString() : "Date not available";
 
 const MyOrders = () => {
   const dispatch = useDispatch();
@@ -128,7 +128,7 @@ const MyOrders = () => {
   if (!isInitialized) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <LoadingSpinner size="large" text="Preparando tus órdenes..." />
+        <LoadingSpinner size="large" text="Preparing your orders..." />
       </div>
     );
   }
@@ -140,7 +140,7 @@ const MyOrders = () => {
   if (myOrdersLoading && !myOrdersLoaded) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <LoadingSpinner size="large" text="Cargando tus órdenes..." />
+        <LoadingSpinner size="large" text="Loading your orders..." />
       </div>
     );
   }
@@ -150,14 +150,14 @@ const MyOrders = () => {
       <div className="min-h-screen bg-white flex items-center justify-center px-6">
         <div className="max-w-md text-center">
           <h2 className="text-2xl font-semibold text-gray-900 mb-3">
-            No pudimos cargar tus órdenes
+            We couldn't load your orders
           </h2>
           <p className="text-gray-600 mb-6">{myOrdersError}</p>
           <button
             onClick={handleRetry}
             className="inline-flex items-center justify-center px-5 py-3 rounded-lg bg-black text-white hover:bg-gray-800 transition-colors duration-200"
           >
-            Reintentar
+            Retry
           </button>
         </div>
       </div>
@@ -170,10 +170,10 @@ const MyOrders = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-12">
           <div>
             <h1 className="text-4xl font-semibold text-gray-900 mb-2">
-              Mis Órdenes
+              My Orders
             </h1>
             <p className="text-gray-600">
-              Aquí encontrarás el historial de compras realizadas con tu cuenta.
+              Here you'll find the purchase history made with your account.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -181,21 +181,21 @@ const MyOrders = () => {
               onClick={() => navigate("/products")}
               className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors duration-200"
             >
-              Seguir comprando
+              Continue shopping
             </button>
             <button
               onClick={handleRetry}
               className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={myOrdersLoading}
             >
-              {myOrdersLoading ? "Actualizando..." : "Actualizar"}
+              {myOrdersLoading ? "Updating..." : "Refresh"}
             </button>
           </div>
         </div>
 
         {myOrdersLoading && myOrdersLoaded && (
           <div className="mb-6 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-            Actualizando la lista de órdenes...
+            Updating orders list...
           </div>
         )}
 
@@ -203,17 +203,17 @@ const MyOrders = () => {
           <div className="text-center py-16 rounded-3xl border border-dashed border-gray-300 bg-gray-50">
             <div className="text-5xl mb-4">🛒</div>
             <h2 className="text-2xl font-semibold text-gray-900 mb-3">
-              Todavía no realizaste compras
+              You haven't made any purchases yet
             </h2>
             <p className="text-gray-600 mb-6 max-w-lg mx-auto">
-              Cuando confirmes tu primera orden la verás listada aquí junto con
-              todos los detalles de la compra.
+              When you confirm your first order, you'll see it listed here along with
+              all the purchase details.
             </p>
             <button
               onClick={() => navigate("/products")}
               className="px-6 py-3 rounded-lg bg-black text-white hover:bg-gray-800 transition-colors duration-200"
             >
-              Explorar productos
+              Explore products
             </button>
           </div>
         ) : (
@@ -234,14 +234,14 @@ const MyOrders = () => {
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
                       <div>
                         <h2 className="text-xl font-semibold text-gray-900">
-                          Orden #{orderId}
+                          Order #{orderId}
                         </h2>
                         <p className="text-sm text-gray-500 mt-1">
                           {formatDate(order?.createdAt ?? order?.created_at)}
                         </p>
                       </div>
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusBadgeClass}`}>
-                        {order?.status ?? "SIN ESTADO"}
+                        {order?.status ?? "NO STATUS"}
                       </span>
                     </div>
 
@@ -258,42 +258,42 @@ const MyOrders = () => {
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-500 mb-1">Método de pago</p>
+                        <p className="text-gray-500 mb-1">Payment method</p>
                         <p className="font-semibold text-gray-900">
                           {order?.paymentMethod ??
                             order?.payment_method ??
-                            "No especificado"}
+                            "Not specified"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-500 mb-1">Dirección de envío</p>
+                        <p className="text-gray-500 mb-1">Shipping address</p>
                         <p className="font-semibold text-gray-900 whitespace-pre-line">
                           {order?.shippingAddress ??
                             order?.shipping_address ??
-                            "No indicada"}
+                            "Not provided"}
                         </p>
                       </div>
                       <div>
                         <p className="text-gray-500 mb-1">
-                          Dirección de facturación
+                          Billing address
                         </p>
                         <p className="font-semibold text-gray-900 whitespace-pre-line">
                           {order?.billingAddress ??
                             order?.billing_address ??
                             order?.shippingAddress ??
                             order?.shipping_address ??
-                            "No indicada"}
+                            "Not provided"}
                         </p>
                       </div>
                     </div>
 
                     <div>
                       <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">
-                        Productos de la orden
+                        Order products
                       </h3>
                       {items.length === 0 ? (
                         <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">
-                          No hay productos asociados a esta orden.
+                          No products associated with this order.
                         </div>
                       ) : (
                         <div className="space-y-4">
@@ -307,7 +307,7 @@ const MyOrders = () => {
                                   {getItemName(item)}
                                 </p>
                                 <p className="text-xs text-gray-500 mt-1">
-                                  Cantidad: {getItemQty(item)} · Precio unitario:{" "}
+                                  Quantity: {getItemQty(item)} · Unit price:{" "}
                                   {formatMoney(getItemPrice(item))}
                                 </p>
                               </div>
@@ -331,4 +331,3 @@ const MyOrders = () => {
 };
 
 export default MyOrders;
-

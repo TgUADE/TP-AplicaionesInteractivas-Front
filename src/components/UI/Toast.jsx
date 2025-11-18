@@ -52,7 +52,7 @@ const Toast = ({ toast, onClose }) => {
   const { message, variant } = toast;
 
   return (
-    <div className="fixed top-4 right-4 z-50 animate-slide-in">
+    <div className="fixed top-24 right-4 z-50 animate-slide-in">
       <div
         className={`min-w-[320px] px-4 py-3 rounded-lg shadow-lg border-l-4 flex items-start gap-3 ${getVariantClasses(
           variant

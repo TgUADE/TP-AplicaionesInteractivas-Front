@@ -13,6 +13,7 @@ import CheckoutModal from "../components/Cart/CheckoutModal";
 import OrderConfirmed from "../components/Cart/OrderConfirmed";
 import Toast from "../components/UI/Toast";
 import useToast from "../hook/useToast";
+import ClearCartModal from "../components/Cart/ClearCartModal";
 const Cart = () => {
   const navigate = useNavigate();
   const {
@@ -37,6 +38,8 @@ const Cart = () => {
     order,
   } = useOrder();
   const { toast, showToast, dismissToast } = useToast();
+  const [showClearCartModal, setShowClearCartModal] = useState(false);
+  const [isClearingCart, setIsClearingCart] = useState(false);
 
   // Estado del modal y formulario de checkout
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
@@ -99,17 +102,19 @@ const Cart = () => {
   };
 
   const handleClearCart = async () => {
-    if (window.confirm("¿Are you sure you want to clear the cart?")) {
-      try {
-        await clearCart();
-        showToast("Cart cleared", "success");
-      } catch (error) {
-        console.error("Error clearing cart:", error);
-        showToast(
-          error?.message || "Error clearing cart",
-          "error"
-        );
-      }
+    setIsClearingCart(true);
+    try {
+      await clearCart();
+      showToast("Cart cleared", "success");
+      setShowClearCartModal(false);
+    } catch (error) {
+      console.error("Error clearing cart:", error);
+      showToast(
+        error?.message || "Error clearing cart",
+        "error"
+      );
+    } finally {
+      setIsClearingCart(false);
     }
   };
 
@@ -293,7 +298,7 @@ const Cart = () => {
               handleProductClick={handleProductClick}
               handleQuantityChange={handleQuantityChange}
               handleRemoveItem={handleRemoveItem}
-              handleClearCart={handleClearCart}
+              handleClearCart={() => setShowClearCartModal(true)}
             />
 
             {/* Resumen del pedido */}
@@ -334,7 +339,15 @@ const Cart = () => {
             navigate={navigate}
           />
         )}
+        {/* Modal de Clear Cart */}
+        <ClearCartModal
+        isOpen={showClearCartModal}
+        onClose={() => setShowClearCartModal(false)}
+        onConfirm={handleClearCart}
+        isLoading={isClearingCart}
+        />
       </div>
+      
       <Toast toast={toast} onClose={dismissToast} />
     </div>
   );

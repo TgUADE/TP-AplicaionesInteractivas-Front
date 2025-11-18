@@ -9,6 +9,7 @@ import ProfileIconAndMail from "../components/Profile/ProfileIconAndMail";
 import ProfileForm from "../components/Profile/ProfileForm";
 import Toast from "../components/UI/Toast";
 import useToast from "../hook/useToast";
+import DeleteAccountModal from "../components/Profile/DeleteAccountModal";
 
 const Profile = () => {
   const { isLoggedIn, logout, isInitialized } = useAuth();
@@ -19,6 +20,8 @@ const Profile = () => {
   const [editedData, setEditedData] = useState({});
   const { toast, showToast, dismissToast } = useToast();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -83,24 +86,25 @@ const Profile = () => {
   };
 
   const handleDeleteAccount = async () => {
-    if (window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
-      try {
-        await deleteAccount();
-        setIsLoggingOut(true);
-        showToast("Account deleted successfully", "success");
-        
-        setTimeout(() => {
-          dispatch(clearUserProfile());
-          logout();
-          navigate("/home");
-        }, 1500);
-        
-        console.log("✅ Account deleted successfully");
-      } catch (error) {
-        console.error("❌ Error deleting account:", error);
-        setIsLoggingOut(false);
-        showToast("Error deleting account. Please try again.", "error");
-      }
+    try {
+      setIsDeletingAccount(true);
+      await deleteAccount();
+      setShowDeleteModal(false);
+      setIsLoggingOut(true);
+      showToast("Account deleted successfully", "success");
+      
+      setTimeout(() => {
+        dispatch(clearUserProfile());
+        logout();
+        navigate("/home");
+      }, 1500);
+      
+      console.log("✅ Account deleted successfully");
+    } catch (error) {
+      console.error("❌ Error deleting account:", error);
+      setIsDeletingAccount(false);
+      setIsLoggingOut(false);
+      showToast("Error deleting account. Please try again.", "error");
     }
   };
 
@@ -166,7 +170,7 @@ const Profile = () => {
 
           <div className="text-center mt-8 pb-12">
             <button
-              onClick={handleDeleteAccount}
+              onClick={() => setShowDeleteModal(true)}
               className="text-red-500 hover:text-red-600 text-sm font-normal underline"
             >
               Delete Account
@@ -174,6 +178,14 @@ const Profile = () => {
           </div>
         </div>
       </section>
+      
+      <DeleteAccountModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteAccount}
+        isLoading={isDeletingAccount}
+      />
+      
       <Toast toast={toast} onClose={dismissToast} />
     </div>
   );
