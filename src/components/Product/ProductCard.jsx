@@ -8,7 +8,7 @@ import useToast from "../../hook/useToast";
 
 const ProductCard = ({ product, onAddToCart }) => {
   const navigate = useNavigate();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isAdmin } = useAuth();
   const { toast, showToast, dismissToast } = useToast();
   const {
     toggleFavorite,
@@ -91,6 +91,12 @@ const ProductCard = ({ product, onAddToCart }) => {
       return;
     }
 
+    // Verificar si es admin ANTES de hacer nada
+    if (isAdmin) {
+      showToast("Admins cannot add favorites", "error");
+      return;
+    }
+
     if (!product.id) {
       showToast("Producto inválido", "error");
       return;
@@ -113,6 +119,12 @@ const ProductCard = ({ product, onAddToCart }) => {
 
   const handleAddToCart = async (e) => {
     e.stopPropagation();
+    
+    // Verificar si es admin ANTES de hacer nada
+    if (isAdmin) {
+      showToast("Admins cannot add products to cart", "error");
+      return;
+    }
     
     if (!onAddToCart) return;
     if (isAdding) return;

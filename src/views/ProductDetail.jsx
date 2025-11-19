@@ -17,7 +17,7 @@ const ProductDetail = () => {
   const { product, isLoading, error } = useProduct(id);
   const { addToCart } = useCart();
   const { toggleFavorite, isFavorite, isLoading: favLoading } = useFavoritesContext();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isAdmin } = useAuth();
   const [isAdding, setIsAdding] = useState(false);
   
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -81,6 +81,12 @@ const ProductDetail = () => {
 
 
   const handleAddToCart = async () => {
+    // Verificar si es admin ANTES de hacer nada
+    if (isAdmin) {
+      showToast("Admins cannot add products to cart", "error");
+      return;
+    }
+
     if (isAdding) return;
     setIsAdding(true);
     try {
@@ -101,6 +107,12 @@ const ProductDetail = () => {
     if (!isLoggedIn) {
       showToast("You must be logged in to manage favorites.", "error");
       navigate('/auth');
+      return;
+    }
+
+    // Verificar si es admin ANTES de hacer nada
+    if (isAdmin) {
+      showToast("Admins cannot add favorites", "error");
       return;
     }
 

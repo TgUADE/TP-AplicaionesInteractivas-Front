@@ -117,13 +117,19 @@ const MyOrders = () => {
   }, [dispatch]);
 
   const ordersWithItems = useMemo(
-    () =>
-      (Array.isArray(myOrders) ? myOrders : []).map((order) => ({
+  () =>
+    (Array.isArray(myOrders) ? myOrders : [])
+      .map((order) => ({
         order,
         items: parseOrderItems(order),
-      })),
-    [myOrders]
-  );
+      }))
+      .sort((a, b) => {
+        const dateA = new Date(a.order?.createdAt ?? a.order?.created_at ?? 0);
+        const dateB = new Date(b.order?.createdAt ?? b.order?.created_at ?? 0);
+        return dateB - dateA; 
+      }),
+  [myOrders]
+);
 
   if (!isInitialized) {
     return (
