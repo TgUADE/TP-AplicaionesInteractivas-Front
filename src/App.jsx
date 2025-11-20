@@ -13,6 +13,7 @@ import Profile from "./views/Profile";
 import Cart from "./views/Cart";
 import Favorites from "./views/Favorites";
 import MyOrders from "./views/MyOrders";
+import CheckoutSuccess from "./views/CheckoutSuccess";
 import RequireAdmin from "./components/RouteGuards/RequireAdmin";
 import AdminLayout from "./components/Admin/AdminLayout";
 import ProductsAdmin from "./views/Admin/ProductsAdmin";
@@ -41,6 +42,7 @@ function App() {
         <Route path="/my-orders" element={<MyOrders />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/favorites" element={<Favorites />} />
+        <Route path="/checkout/success" element={<CheckoutSuccess />} />
         <Route
           path="/admin"
           element={

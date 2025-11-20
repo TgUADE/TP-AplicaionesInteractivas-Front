@@ -13,6 +13,8 @@ import adminPromotionsReducer from "./slices/Admin/adminPromotionsSlice.js";
 import adminCategoriesReducer from "./slices/Admin/adminCategoriesSlice.js";
 import adminUsersReducer from "./slices/Admin/adminUsersSlice.js";
 import adminOrdersReducer from "./slices/Admin/adminOrdersSlice.js";
+import stripeReducer from "./slices/stripeSlice.js";
+
 export const store = configureStore({
   reducer: {
     products: productReducer,
@@ -29,5 +31,6 @@ export const store = configureStore({
     adminCategories: adminCategoriesReducer,
     adminUsers: adminUsersReducer,
     adminOrders: adminOrdersReducer,
+    stripe: stripeReducer,
   },
 });
