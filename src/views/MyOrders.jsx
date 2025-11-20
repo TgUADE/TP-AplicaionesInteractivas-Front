@@ -9,7 +9,7 @@ import { useAuth } from "../hook/useAuth";
 const statusStyles = {
   PENDING: "bg-amber-100 text-amber-800 border border-amber-200",
   SHIPPED: "bg-green-100 text-green-800 border border-green-200",
-  CANCELLED: "bg-gray-100 text-gray-600 border border-gray-200",
+  CANCELLED: "bg-red-100 text-red-800 border border-red-200",
 };
 
 const parseOrderItems = (order) => {

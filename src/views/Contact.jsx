@@ -1,3 +1,4 @@
+import MailIcon from "../icons/MailIcon";
 const Contact = () => {
   return (
     <div className="min-h-screen bg-white w-full">
@@ -16,7 +17,7 @@ const Contact = () => {
             <div className="space-y-8">
               <div className="text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-                  <span className="text-2xl">✉️</span>
+                  <MailIcon className="w-8 h-8 text-gray-500" />
                 </div>
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">
                   Email Us

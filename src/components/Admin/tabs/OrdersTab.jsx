@@ -22,7 +22,7 @@ const OrdersTab = ({
   const statusStyles = {
     PENDING: "bg-amber-100 border-amber-300 text-amber-800",
     SHIPPED: "bg-green-100 border-green-300 text-green-800",
-    CANCELLED: "bg-gray-100 border-gray-300 text-gray-600",
+    CANCELLED: "bg-red-100 border-red-300 text-red-600",
   };
 
   const formatDate = (value) =>
