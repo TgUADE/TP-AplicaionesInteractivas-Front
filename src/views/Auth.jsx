@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useAuth } from "../hook/useAuth";
 import { useNavigate } from "react-router-dom";
 import AuthForm from "../components/Auth/AuthForm";
@@ -11,30 +11,47 @@ const Auth = () => {
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
   const [isLogin, setIsLogin] = useState(true);
-  const { login, register, isLoading } = useAuth();
   const navigate = useNavigate();
   const { toast, showToast, dismissToast } = useToast();
   
-  const handleLogin = async (e) => {
-    e.preventDefault();
-
-    try {
-      console.log("🔐 Attempting login...");
-      await login({ email, password });
+  // Callbacks que se ejecutan en respuesta a cambios en el estado de Redux
+  const authCallbacks = useMemo(() => ({
+    onLoginSuccess: () => {
       console.log("✅ Login successful");
       showToast("Login successful", "success");
-      
       // Esperar antes de navegar para que se vea el toast
       setTimeout(() => {
         navigate("/home");
       }, 1500);
-    } catch (error) {
+    },
+    onLoginError: (error) => {
       console.error("❌ Login error:", error);
-      showToast("Login failed: " + (error.message || "Unknown error"), "error");
-    }
+      showToast("Login failed: " + (error || "Unknown error"), "error");
+    },
+    onRegisterSuccess: () => {
+      console.log("✅ Registration successful");
+      showToast("Registration successful", "success");
+      // Esperar antes de navegar para que se vea el toast
+      setTimeout(() => {
+        navigate("/home");
+      }, 1500);
+    },
+    onRegisterError: (error) => {
+      console.error("❌ Registration error:", error);
+      showToast("Registration failed: " + (error || "Unknown error"), "error");
+    },
+  }), [showToast, navigate]);
+  
+  const { login, register, isLoading } = useAuth(authCallbacks);
+  
+  const handleLogin = (e) => {
+    e.preventDefault();
+    console.log("🔐 Attempting login...");
+    // Solo dispatch - el toast se mostrará automáticamente por cambios en Redux
+    login({ email, password });
   };
 
-  const handleRegister = async (e) => {
+  const handleRegister = (e) => {
     e.preventDefault();
 
     if (!name || !surname || !email || !password) {
@@ -42,20 +59,9 @@ const Auth = () => {
       return;
     }
 
-    try {
-      console.log("📝 Attempting registration...");
-      await register({ name, surname, email, password });
-      console.log("✅ Registration successful");
-      showToast("Registration successful", "success");
-      
-      // Esperar antes de navegar para que se vea el toast
-      setTimeout(() => {
-        navigate("/home");
-      }, 1500);
-    } catch (error) {
-      console.error("❌ Registration error:", error);
-      showToast("Registration failed: " + (error.message || "Unknown error"), "error");
-    }
+    console.log("📝 Attempting registration...");
+    // Solo dispatch - el toast se mostrará automáticamente por cambios en Redux
+    register({ name, surname, email, password });
   };
 
   return (

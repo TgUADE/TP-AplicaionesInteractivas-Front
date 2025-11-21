@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useCart } from "../hook/useCart";
@@ -20,18 +20,6 @@ import { createCheckoutSession } from "../redux/slices/stripeSlice";
 const Cart = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const {
-    cart,
-    cartItems,
-    isLoading,
-    error,
-    updateQuantity,
-    removeFromCart,
-    clearCart,
-    //getCart,
-    //createCart,
-    isLocalCart,
-  } = useCart();
   const { products } = useProducts();
   const { isLoggedIn, token } = useAuth();
   const [cartProducts, setCartProducts] = useState([]);
@@ -47,6 +35,47 @@ const Cart = () => {
   const { loading: stripeLoading, error: stripeError } = useSelector(
     (state) => state.stripe
   );
+  
+  // Callbacks para cart basados en Redux
+  const cartCallbacks = useMemo(() => ({
+    onUpdateSuccess: () => {
+      showToast("Cart updated", "success");
+    },
+    onUpdateError: (error) => {
+      console.error("Error updating cart:", error);
+      showToast(error || "Error updating cart", "error");
+    },
+    onRemoveSuccess: () => {
+      showToast("Product removed from cart", "success");
+    },
+    onRemoveError: (error) => {
+      console.error("Error removing product from cart:", error);
+      showToast(error || "Error removing product from cart", "error");
+    },
+    onClearSuccess: () => {
+      showToast("Cart cleared", "success");
+      setShowClearCartModal(false);
+      setIsClearingCart(false);
+    },
+    onClearError: (error) => {
+      console.error("Error clearing cart:", error);
+      showToast(error || "Error clearing cart", "error");
+      setIsClearingCart(false);
+    },
+  }), [showToast]);
+
+  const {
+    cart,
+    cartItems,
+    isLoading,
+    error,
+    updateQuantity,
+    removeFromCart,
+    clearCart,
+    //getCart,
+    //createCart,
+    isLocalCart,
+  } = useCart(cartCallbacks);
 
   // Estado del modal y formulario de checkout
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
@@ -77,43 +106,24 @@ const Cart = () => {
     }
   }, [cartItems, products]);
 
-  const handleQuantityChange = async (productId, newQuantity) => {
-    try {
-      if (newQuantity <= 0) {
-        await removeFromCart(productId);
-        showToast("Product removed from cart", "success");
-      } else {
-        await updateQuantity(productId, newQuantity);
-        showToast("Cart updated", "success");
-      }
-    } catch (error) {
-      console.error("Error updating cart:", error);
-      showToast(error?.message || "Error updating cart", "error");
+  const handleQuantityChange = (productId, newQuantity) => {
+    // El toast se mostrará automáticamente por callbacks de Redux
+    if (newQuantity <= 0) {
+      removeFromCart(productId);
+    } else {
+      updateQuantity(productId, newQuantity);
     }
   };
 
-  const handleRemoveItem = async (productId) => {
-    try {
-      await removeFromCart(productId);
-      showToast("Product removed from cart", "success");
-    } catch (error) {
-      console.error("Error removing product from cart:", error);
-      showToast(error?.message || "Error removing product from cart", "error");
-    }
+  const handleRemoveItem = (productId) => {
+    // El toast se mostrará automáticamente por callbacks de Redux
+    removeFromCart(productId);
   };
 
-  const handleClearCart = async () => {
+  const handleClearCart = () => {
     setIsClearingCart(true);
-    try {
-      await clearCart();
-      showToast("Cart cleared", "success");
-      setShowClearCartModal(false);
-    } catch (error) {
-      console.error("Error clearing cart:", error);
-      showToast(error?.message || "Error clearing cart", "error");
-    } finally {
-      setIsClearingCart(false);
-    }
+    // El toast se mostrará automáticamente por callbacks de Redux
+    clearCart();
   };
 
   const calculateTotal = () => {

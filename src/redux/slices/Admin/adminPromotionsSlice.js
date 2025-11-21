@@ -11,12 +11,6 @@ const getAuthHeaders = (state) => {
   return { Authorization: `Bearer ${token}` };
 };
 
-const getErrorMessage = (error) =>
-  error?.response?.data?.message ||
-  error?.response?.data?.error ||
-  error?.message ||
-  "Error inesperado";
-
 const sortPromotions = (promotions = []) =>
   promotions
     .slice()
@@ -28,89 +22,65 @@ const sortPromotions = (promotions = []) =>
 
 export const fetchAdminPromotions = createAsyncThunk(
   "adminPromotions/fetchAll",
-  async (_, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await api.get("/promotions", { headers });
-      return Array.isArray(data) ? data : [];
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async (_, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    const { data } = await api.get("/promotions", { headers });
+    return Array.isArray(data) ? data : [];
   }
 );
 
 export const createAdminPromotion = createAsyncThunk(
   "adminPromotions/create",
-  async (payload, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await api.post("/promotions", payload, { headers });
-      return data;
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async (payload, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    const { data } = await api.post("/promotions", payload, { headers });
+    return data;
   }
 );
 
 export const updateAdminPromotion = createAsyncThunk(
   "adminPromotions/update",
-  async ({ promotionId, payload }, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await api.put(`/promotions/${promotionId}`, payload, {
-        headers,
-      });
-      return data;
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async ({ promotionId, payload }, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    const { data } = await api.put(`/promotions/${promotionId}`, payload, {
+      headers,
+    });
+    return data;
   }
 );
 
 export const deleteAdminPromotion = createAsyncThunk(
   "adminPromotions/delete",
-  async (promotionId, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      await api.delete(`/promotions/${promotionId}`, { headers });
-      return promotionId;
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async (promotionId, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    await api.delete(`/promotions/${promotionId}`, { headers });
+    return promotionId;
   }
 );
 
 export const activateAdminPromotion = createAsyncThunk(
   "adminPromotions/activate",
-  async (promotionId, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await api.put(
-        `/promotions/${promotionId}/activate`,
-        {},
-        { headers }
-      );
-      return data ?? { id: promotionId, active: true };
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async (promotionId, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    const { data } = await api.put(
+      `/promotions/${promotionId}/activate`,
+      {},
+      { headers }
+    );
+    return data ?? { id: promotionId, active: true };
   }
 );
 
 export const deactivateAdminPromotion = createAsyncThunk(
   "adminPromotions/deactivate",
-  async (promotionId, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await api.put(
-        `/promotions/${promotionId}/deactivate`,
-        {},
-        { headers }
-      );
-      return data ?? { id: promotionId, active: false };
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async (promotionId, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    const { data } = await api.put(
+      `/promotions/${promotionId}/deactivate`,
+      {},
+      { headers }
+    );
+    return data ?? { id: promotionId, active: false };
   }
 );
 
@@ -140,8 +110,7 @@ const adminPromotionsSlice = createSlice({
       })
       .addCase(fetchAdminPromotions.rejected, (state, action) => {
         state.loading = false;
-        state.error =
-          action.payload || action.error?.message || "Error inesperado";
+        state.error = action.error.message;
       })
       .addCase(createAdminPromotion.pending, (state) => {
         state.mutationStatus = "loading";
@@ -157,8 +126,7 @@ const adminPromotionsSlice = createSlice({
       })
       .addCase(createAdminPromotion.rejected, (state, action) => {
         state.mutationStatus = "failed";
-        state.mutationError =
-          action.payload || action.error?.message || "Error inesperado";
+        state.mutationError = action.error.message;
       })
       .addCase(updateAdminPromotion.pending, (state) => {
         state.mutationStatus = "loading";
@@ -178,8 +146,7 @@ const adminPromotionsSlice = createSlice({
       })
       .addCase(updateAdminPromotion.rejected, (state, action) => {
         state.mutationStatus = "failed";
-        state.mutationError =
-          action.payload || action.error?.message || "Error inesperado";
+        state.mutationError = action.error.message;
       })
       .addCase(deleteAdminPromotion.pending, (state) => {
         state.mutationStatus = "loading";
@@ -195,8 +162,7 @@ const adminPromotionsSlice = createSlice({
       })
       .addCase(deleteAdminPromotion.rejected, (state, action) => {
         state.mutationStatus = "failed";
-        state.mutationError =
-          action.payload || action.error?.message || "Error inesperado";
+        state.mutationError = action.error.message;
       })
       .addCase(activateAdminPromotion.pending, (state) => {
         state.mutationStatus = "loading";
@@ -216,8 +182,7 @@ const adminPromotionsSlice = createSlice({
       })
       .addCase(activateAdminPromotion.rejected, (state, action) => {
         state.mutationStatus = "failed";
-        state.mutationError =
-          action.payload || action.error?.message || "Error inesperado";
+        state.mutationError = action.error.message;
       })
       .addCase(deactivateAdminPromotion.pending, (state) => {
         state.mutationStatus = "loading";
@@ -237,8 +202,7 @@ const adminPromotionsSlice = createSlice({
       })
       .addCase(deactivateAdminPromotion.rejected, (state, action) => {
         state.mutationStatus = "failed";
-        state.mutationError =
-          action.payload || action.error?.message || "Error inesperado";
+        state.mutationError = action.error.message;
       });
   },
 });

@@ -7,12 +7,6 @@ const getAuthHeaders = (state) => {
   return { Authorization: `Bearer ${token}` };
 };
 
-const getErrorMessage = (error) =>
-  error?.response?.data?.message ||
-  error?.response?.data?.error ||
-  error?.message ||
-  "Error inesperado";
-
 const sortOrders = (orders = []) =>
   orders
     .slice()
@@ -32,32 +26,24 @@ const initialState = {
 
 export const fetchAdminOrders = createAsyncThunk(
   "adminOrders/fetchAll",
-  async (_, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await axios.get("/orders", { headers });
-      return Array.isArray(data) ? data : [];
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async (_, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    const { data } = await axios.get("/orders", { headers });
+    return Array.isArray(data) ? data : [];
   }
 );
 
 export const updateAdminOrderStatus = createAsyncThunk(
   "adminOrders/updateStatus",
-  async ({ orderId, status }, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await axios.put(
-        `/orders/${orderId}`,
-        { status },
-        { headers }
-      );
-      const payload = data && typeof data === "object" ? data : { status };
-      return { orderId, payload };
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async ({ orderId, status }, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    const { data } = await axios.put(
+      `/orders/${orderId}`,
+      { status },
+      { headers }
+    );
+    const payload = data && typeof data === "object" ? data : { status };
+    return { orderId, payload };
   }
 );
 
@@ -79,8 +65,7 @@ const adminOrdersSlice = createSlice({
       })
       .addCase(fetchAdminOrders.rejected, (state, action) => {
         state.loading = false;
-        state.error =
-          action.payload || action.error?.message || "Error inesperado";
+        state.error = action.error.message;
       })
       .addCase(updateAdminOrderStatus.pending, (state) => {
         state.mutationStatus = "loading";
@@ -107,8 +92,7 @@ const adminOrdersSlice = createSlice({
       })
       .addCase(updateAdminOrderStatus.rejected, (state, action) => {
         state.mutationStatus = "failed";
-        state.mutationError =
-          action.payload || action.error?.message || "Error inesperado";
+        state.mutationError = action.error.message;
       });
   },
 });

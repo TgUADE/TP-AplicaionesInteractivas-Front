@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../hook/useAuth";
 import { useUserProfile } from "../hook/useUserProfile";
 import { useNavigate } from "react-router-dom";
@@ -12,8 +12,6 @@ import useToast from "../hook/useToast";
 import DeleteAccountModal from "../components/Profile/DeleteAccountModal";
 
 const Profile = () => {
-  const { isLoggedIn, logout, isInitialized } = useAuth();
-  const { profile, isLoading, error, isInitialized: profileInitialized, updateProfile, deleteAccount } = useUserProfile();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
@@ -22,6 +20,47 @@ const Profile = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  
+  // Callbacks para auth (logout)
+  const authCallbacks = useMemo(() => ({
+    onLogoutSuccess: () => {
+      showToast("Logged out successfully", "success");
+    },
+  }), [showToast]);
+  
+  // Callbacks para profile
+  const profileCallbacks = useMemo(() => ({
+    onUpdateSuccess: () => {
+      setIsEditing(false);
+      showToast("Profile updated successfully", "success");
+      console.log("✅ Profile updated successfully");
+    },
+    onUpdateError: (error) => {
+      console.error("❌ Error updating profile:", error);
+      showToast("Error updating profile. Please try again.", "error");
+    },
+    onDeleteSuccess: () => {
+      setShowDeleteModal(false);
+      setIsLoggingOut(true);
+      showToast("Account deleted successfully", "success");
+      console.log("✅ Account deleted successfully");
+      
+      setTimeout(() => {
+        dispatch(clearUserProfile());
+        logout();
+        navigate("/home");
+      }, 1500);
+    },
+    onDeleteError: (error) => {
+      console.error("❌ Error deleting account:", error);
+      setIsDeletingAccount(false);
+      setIsLoggingOut(false);
+      showToast("Error deleting account. Please try again.", "error");
+    },
+  }), [showToast, dispatch, navigate]);
+  
+  const { isLoggedIn, logout, isInitialized } = useAuth(authCallbacks);
+  const { profile, isLoading, error, isInitialized: profileInitialized, updateProfile, deleteAccount } = useUserProfile(profileCallbacks);
 
   useEffect(() => {
     if (profile) {
@@ -36,20 +75,13 @@ const Profile = () => {
   }, [isLoggedIn, isInitialized, navigate, isLoggingOut]);
 
   const handleLogout = () => {
-    try {
-      setIsLoggingOut(true);
-      showToast("Logged out successfully", "success");
-      
-      setTimeout(() => {
-        dispatch(clearUserProfile());
-        logout();
-        navigate("/home");
-      }, 1500);
-    } catch (error) {
-      console.error("❌ Error during logout:", error);
-      setIsLoggingOut(false);
-      showToast("Error during logout. Please try again.", "error");
-    }
+    setIsLoggingOut(true);
+    // El toast se mostrará automáticamente por el callback onLogoutSuccess
+    setTimeout(() => {
+      dispatch(clearUserProfile());
+      logout();
+      navigate("/home");
+    }, 1500);
   };
 
   const handleEdit = (e) => {
@@ -67,45 +99,20 @@ const Profile = () => {
     setEditedData(profile);
   };
 
-  const handleSave = async (e) => {
+  const handleSave = (e) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
     console.log("💾 Saving profile changes");
-    
-    try {
-      await updateProfile(editedData);
-      setIsEditing(false);
-      showToast("Profile updated successfully", "success");
-      console.log("✅ Profile updated successfully");
-    } catch (error) {
-      console.error("❌ Error updating profile:", error);
-      showToast("Error updating profile. Please try again.", "error");
-    }
+    // El toast se mostrará automáticamente por callbacks de Redux
+    updateProfile(editedData);
   };
 
-  const handleDeleteAccount = async () => {
-    try {
-      setIsDeletingAccount(true);
-      await deleteAccount();
-      setShowDeleteModal(false);
-      setIsLoggingOut(true);
-      showToast("Account deleted successfully", "success");
-      
-      setTimeout(() => {
-        dispatch(clearUserProfile());
-        logout();
-        navigate("/home");
-      }, 1500);
-      
-      console.log("✅ Account deleted successfully");
-    } catch (error) {
-      console.error("❌ Error deleting account:", error);
-      setIsDeletingAccount(false);
-      setIsLoggingOut(false);
-      showToast("Error deleting account. Please try again.", "error");
-    }
+  const handleDeleteAccount = () => {
+    setIsDeletingAccount(true);
+    // El toast se mostrará automáticamente por callbacks de Redux
+    deleteAccount();
   };
 
   const handleInputChange = (field, value) => {

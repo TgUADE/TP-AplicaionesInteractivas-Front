@@ -1,0 +1,329 @@
+# Project Structure and Coding Guidelines
+
+## Project Structure
+
+```
+src/
+├── components/          # Reusable React components
+│   ├── common/         # Common/shared components
+│   └── layout/         # Layout components (Header, Footer, etc.)
+├── pages/              # Page components (route-level components)
+├── redux/              # Redux state management
+│   ├── slices/         # Redux slices (state + reducers + async thunks)
+│   │   ├── Admin/      # Admin-specific slices
+│   │   └── ...         # Other domain slices
+│   └── store.js        # Redux store configuration
+├── hook/               # Custom React hooks
+├── services/           # API services and external integrations
+├── utils/              # Utility functions and helpers
+├── assets/             # Static assets (images, fonts, etc.)
+└── App.js              # Main application component
+```
+
+## Redux Architecture Rules
+
+### 1. Async Thunks - NO Try/Catch Pattern
+
+**IMPORTANT**: When creating async thunks with `createAsyncThunk`, DO NOT use try/catch blocks or `rejectWithValue`.
+
+#### ✅ CORRECT Way:
+```javascript
+export const fetchProducts = createAsyncThunk(
+  "products/fetchProducts",
+  async () => {
+    const { data } = await axios.get("/api/products");
+    return data;
+  }
+);
+
+export const fetchProductById = createAsyncThunk(
+  "products/fetchProductById",
+  async (productId) => {
+    const { data } = await axios.get(`/api/products/${productId}`);
+    return data;
+  }
+);
+```
+
+#### ❌ INCORRECT Way:
+```javascript
+export const fetchProducts = createAsyncThunk(
+  "products/fetchProducts",
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await axios.get("/api/products");
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+```
+
+**Rationale**: `createAsyncThunk` automatically handles errors and dispatches rejected actions. Manual try/catch with `rejectWithValue` is redundant and adds unnecessary complexity.
+
+### 2. Slice Structure
+
+Each slice should follow this structure:
+
+```javascript
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import axios from "axios";
+
+// 1. Define async thunks at the top
+export const fetchItems = createAsyncThunk(
+  "sliceName/fetchItems",
+  async () => {
+    const { data } = await axios.get("/api/endpoint");
+    return data;
+  }
+);
+
+// 2. Create the slice
+const itemSlice = createSlice({
+  name: "sliceName",
+  initialState: {
+    items: [],
+    loading: false,
+    error: null,
+  },
+  reducers: {
+    // Synchronous reducers here (if needed)
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchItems.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchItems.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = action.payload;
+      })
+      .addCase(fetchItems.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      });
+  },
+});
+
+// 3. Export reducer
+export default itemSlice.reducer;
+```
+
+### 3. Initial State Pattern
+
+Always include these three properties in your initial state:
+- `loading` (boolean): Indicates if an async operation is in progress
+- `error` (null | string): Stores error messages from failed operations
+- Data property: `items` for lists, `item` for single entities, or domain-specific name
+
+```javascript
+initialState: {
+  items: [],      // or item: null for single entities
+  loading: false,
+  error: null,
+}
+```
+
+### 4. Multiple Slices in One File
+
+When you need multiple related slices (e.g., list and detail views), you can define them in the same file:
+
+```javascript
+// List slice
+const itemsSlice = createSlice({
+  name: "items",
+  // ...
+});
+
+// Detail slice
+const itemDetailSlice = createSlice({
+  name: "item-detail",
+  // ...
+});
+
+// Export both reducers
+export default itemsSlice.reducer;
+export const itemDetailReducer = itemDetailSlice.reducer;
+```
+
+## Custom Hooks Pattern
+
+### CRITICAL RULE: Never Call Redux Directly from Components
+
+**Components should NEVER directly use `useDispatch` or `useSelector` to interact with Redux slices.**
+
+Instead, create custom hooks in the `src/hook/` directory that encapsulate Redux logic.
+
+### ✅ CORRECT Architecture:
+
+**Component → Custom Hook → Redux Slice**
+
+```
+Component.jsx  --->  useProduct.js  --->  productSlice.js
+```
+
+### Custom Hook Structure
+
+Custom hooks should:
+1. Use `useDispatch` and `useSelector` internally
+2. Handle all loading states and side effects
+3. Provide a clean, simple API to components
+4. Return only what the component needs
+
+#### Example Custom Hook:
+
+```javascript
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchProductById } from "../redux/slices/productSlice.js";
+
+export const useProduct = (productId) => {
+  const [product, setProduct] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const dispatch = useDispatch();
+  const productDetail = useSelector((state) => state.productDetail);
+  const { item, error, loading } = productDetail || {
+    item: null,
+    error: null,
+    loading: false,
+  };
+
+  // Fetch product by ID
+  useEffect(() => {
+    if (productId) {
+      dispatch(fetchProductById(productId));
+    }
+  }, [dispatch, productId]);
+
+  // Success fetch product by ID
+  useEffect(() => {
+    if (item) {
+      setProduct(item);
+      setIsLoading(false);
+    } else if (!loading && !item) {
+      setIsLoading(false);
+    }
+  }, [item, loading]);
+
+  // Loading state
+  useEffect(() => {
+    setIsLoading(loading);
+  }, [loading]);
+
+  // Error state
+  useEffect(() => {
+    if (error) {
+      setIsLoading(false);
+    }
+  }, [error]);
+
+  return {
+    product,
+    isLoading,
+    error,
+  };
+};
+```
+
+#### Using the Custom Hook in a Component:
+
+```javascript
+import { useProduct } from "../hook/useProduct";
+
+const ProductDetail = ({ productId }) => {
+  const { product, isLoading, error } = useProduct(productId);
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (!product) return <div>Product not found</div>;
+
+  return (
+    <div>
+      <h1>{product.name}</h1>
+      <p>{product.description}</p>
+    </div>
+  );
+};
+```
+
+### ❌ INCORRECT - Don't Do This:
+
+```javascript
+// BAD: Component directly using Redux
+import { useDispatch, useSelector } from "react-redux";
+import { fetchProductById } from "../redux/slices/productSlice";
+
+const ProductDetail = ({ productId }) => {
+  const dispatch = useDispatch();
+  const productDetail = useSelector((state) => state.productDetail);
+  
+  useEffect(() => {
+    dispatch(fetchProductById(productId));
+  }, [productId]);
+  
+  // ... more component logic
+};
+```
+
+## Naming Conventions
+
+### Files and Folders
+- Slices: `camelCase` with `Slice` suffix → `productSlice.js`, `orderSlice.js`
+- Hooks: `camelCase` with `use` prefix → `useProduct.js`, `useAuth.js`
+- Components: `PascalCase` → `ProductCard.jsx`, `UserProfile.jsx`
+- Admin slices folder: `Admin/` (PascalCase for folder)
+
+### Variables and Functions
+- State variables: `camelCase` → `isLoading`, `productDetail`
+- Async thunks: `camelCase` with action verb → `fetchProducts`, `createOrder`, `updateUser`
+- Slice names: `kebab-case` for multi-word → `"product-id"`, `"user-profile"`
+
+## Redux Store Configuration
+
+Register all reducers in `store.js`:
+
+```javascript
+import { configureStore } from "@reduxjs/toolkit";
+import productReducer, { productIDReducer } from "./slices/productSlice";
+import orderReducer from "./slices/orderSlice";
+import authReducer from "./slices/authSlice";
+
+export const store = configureStore({
+  reducer: {
+    products: productReducer,
+    productDetail: productIDReducer,
+    orders: orderReducer,
+    auth: authReducer,
+    // ... other reducers
+  },
+});
+```
+
+## Best Practices
+
+1. **Separation of Concerns**: Keep business logic in hooks, not in components
+2. **Single Responsibility**: Each hook should handle one specific domain (e.g., products, orders, users)
+3. **Error Handling**: Always handle loading, error, and success states in hooks
+4. **Default Values**: Always provide default values when destructuring Redux state
+5. **Type Safety**: Use consistent property names across slices (`item/items`, `loading`, `error`)
+6. **Axios Usage**: Use axios for HTTP requests in async thunks
+7. **Clean Exports**: Export thunks at the top, default reducer at the bottom
+
+## Example Flow
+
+1. User interacts with a component
+2. Component calls a custom hook (e.g., `useProduct`)
+3. Hook dispatches a thunk (e.g., `fetchProductById`)
+4. Thunk makes API call and returns data
+5. Redux automatically handles pending/fulfilled/rejected states
+6. Hook observes state changes and updates local state
+7. Component receives clean data from hook and renders
+
+This architecture ensures:
+- Components remain simple and focused on rendering
+- Redux logic is centralized and reusable
+- State management is predictable and maintainable
+- Testing is easier (test hooks and slices separately)
+

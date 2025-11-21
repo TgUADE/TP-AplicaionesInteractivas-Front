@@ -4,60 +4,36 @@ import axios from "axios";
 // Crear sesión de checkout de Stripe
 export const createCheckoutSession = createAsyncThunk(
   "stripe/createCheckoutSession",
-  async (
-    { cartProducts, cartId, checkoutData, token },
-    { rejectWithValue }
-  ) => {
-    try {
-      // Preparar productos en el formato que espera el backend
-      const products = cartProducts.map((item) => ({
-        name: item.product.name,
-        description: item.product.description,
-        price: item.product.current_price || item.product.price,
-        quantity: item.quantity,
-        images: item.product.images?.[0]?.imageUrl
-          ? [item.product.images[0].imageUrl]
-          : [],
-      }));
+  async ({ cartProducts, cartId, checkoutData, token }) => {
+    // Preparar productos en el formato que espera el backend
+    const products = cartProducts.map((item) => ({
+      name: item.product.name,
+      description: item.product.description,
+      price: item.product.current_price || item.product.price,
+      quantity: item.quantity,
+      images: item.product.images?.[0]?.imageUrl
+        ? [item.product.images[0].imageUrl]
+        : [],
+    }));
 
-      console.log("📤 Enviando al backend:", {
+    const { data } = await axios.post(
+      "/api/stripe/create-checkout-session",
+      {
         products,
         cartId,
         shippingAddress: checkoutData.shippingAddress,
         billingAddress: checkoutData.billingAddress,
         origin: window.location.origin,
-      });
-
-      const { data } = await axios.post(
-        "/api/stripe/create-checkout-session",
-        {
-          products,
-          cartId,
-          shippingAddress: checkoutData.shippingAddress,
-          billingAddress: checkoutData.billingAddress,
-          origin: window.location.origin,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log("📥 Respuesta del backend:", data);
-      return data;
-    } catch (error) {
-      console.error("❌ Error en createCheckoutSession:");
-      console.error("   Status:", error.response?.status);
-      console.error("   Data:", error.response?.data);
-      console.error("   Headers:", error.response?.headers);
-      console.error("   Error completo:", error);
-      return rejectWithValue(
-        error.response?.data?.error ||
-          error.response?.data?.message ||
-          "Error creating checkout session"
-      );
-    }
+      }
+    );
+    
+    return data;
   }
 );
 
@@ -90,7 +66,7 @@ const stripeSlice = createSlice({
       })
       .addCase(createCheckoutSession.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || "Error creating checkout session";
+        state.error = action.error.message;
       });
   },
 });

@@ -3,11 +3,21 @@ import { useAuth } from "./useAuth";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchUserProfile, updateUserProfile, deleteUserAccount } from "../redux/slices/userSlice";
 
-export const useUserProfile = () => {
+export const useUserProfile = (callbacks = {}) => {
   const { token, isLoggedIn, isInitialized: authInitialized } = useAuth();
   const hasLoadedRef = useRef(false);
   const dispatch = useDispatch();
   const { profile, isLoading, error, isInitialized } = useSelector((state) => state.user);
+  
+  // Referencias para tracking de acciones
+  const lastActionRef = useRef(null);
+  const prevLoadingRef = useRef(isLoading);
+  const callbacksRef = useRef(callbacks);
+  
+  // Actualizar ref de callbacks cuando cambien
+  useEffect(() => {
+    callbacksRef.current = callbacks;
+  }, [callbacks]);
 
   // Función para cargar el perfil
   const fetchProfile = useCallback(() => {
@@ -16,21 +26,61 @@ export const useUserProfile = () => {
     }
   }, [isLoggedIn, token, dispatch]);
 
-  // Función para actualizar el perfil
-  const updateProfile = useCallback(async (profileData) => {
+  // Función para actualizar el perfil - solo dispatch
+  const updateProfile = useCallback((profileData) => {
     if (!isLoggedIn || !token) {
       throw new Error("User must be logged in to update profile");
     }
-    return dispatch(updateUserProfile({ profileData, token })).unwrap();
+    lastActionRef.current = 'update';
+    return dispatch(updateUserProfile({ profileData, token }));
   }, [isLoggedIn, token, dispatch]);
 
-  // Función para eliminar la cuenta
-  const deleteAccount = useCallback(async () => {
+  // Función para eliminar la cuenta - solo dispatch
+  const deleteAccount = useCallback(() => {
     if (!isLoggedIn || !token) {
       throw new Error("User must be logged in to delete account");
     }
-    return dispatch(deleteUserAccount({ token })).unwrap();
+    lastActionRef.current = 'delete';
+    return dispatch(deleteUserAccount({ token }));
   }, [isLoggedIn, token, dispatch]);
+
+  // Observar cambios en el estado de Redux para ejecutar callbacks
+  useEffect(() => {
+    const wasLoading = prevLoadingRef.current;
+    const isNowLoading = isLoading;
+    
+    // Actualizar ref para próxima iteración
+    prevLoadingRef.current = isLoading;
+    
+    // Solo actuar cuando termina de cargar (transición true -> false)
+    if (!wasLoading || isNowLoading) {
+      return;
+    }
+    
+    // Usar callbacksRef para obtener los callbacks actuales
+    const currentCallbacks = callbacksRef.current;
+    
+    // Determinar qué acción terminó y llamar callback apropiado
+    if (lastActionRef.current === 'update') {
+      if (!error && profile) {
+        // Actualización exitosa
+        currentCallbacks.onUpdateSuccess?.();
+      } else if (error) {
+        // Actualización fallida
+        currentCallbacks.onUpdateError?.(error);
+      }
+      lastActionRef.current = null;
+    } else if (lastActionRef.current === 'delete') {
+      if (!error) {
+        // Eliminación exitosa
+        currentCallbacks.onDeleteSuccess?.();
+      } else if (error) {
+        // Eliminación fallida
+        currentCallbacks.onDeleteError?.(error);
+      }
+      lastActionRef.current = null;
+    }
+  }, [isLoading, error, profile]);
 
   // Load profile when auth initializes or changes
   useEffect(() => {

@@ -39,7 +39,7 @@ export const authSlice = createSlice({
   initialState: {
     token: null,
     isLoggedIn: false,
-    isLoading: false,
+    loading: false,
     error: null,
     isInitialized: false,
   },
@@ -49,9 +49,7 @@ export const authSlice = createSlice({
       state.isLoggedIn = false;
       state.error = null;
       localStorage.removeItem('authToken');
-      localStorage.removeItem('temp_cart');
       localStorage.removeItem('isAdmin');
-      ;
     },
     initializeAuth: (state) => {
       const savedToken = localStorage.getItem('authToken');
@@ -74,36 +72,36 @@ export const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-    //LOGIN USER
+      // Login User
       .addCase(loginUser.pending, (state) => {
-        state.isLoading = true;
+        state.loading = true;
         state.error = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
-        state.isLoading = false;
+        state.loading = false;
         state.token = action.payload.token;
         state.isLoggedIn = true;
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
-        state.isLoading = false;
+        state.loading = false;
         state.error = action.error.message;
         state.token = null;
         state.isLoggedIn = false;
       })
-      //REGISTER USER
+      // Register User
       .addCase(registerUser.pending, (state) => {
-        state.isLoading = true;
+        state.loading = true;
         state.error = null;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
-        state.isLoading = false;
+        state.loading = false;
         state.token = action.payload.token;
         state.isLoggedIn = true;
         state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {
-        state.isLoading = false;
+        state.loading = false;
         state.error = action.error.message;
         state.token = null;
         state.isLoggedIn = false;

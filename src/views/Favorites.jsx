@@ -21,7 +21,8 @@ const Favorites = () => {
 
 
   const handleAddToCart = (product) => {
-    addToCart(product, 1);
+    // Retornar la promesa para que ProductCard pueda esperar
+    return addToCart(product, 1);
   };
 
   // Show loading while auth is initializing

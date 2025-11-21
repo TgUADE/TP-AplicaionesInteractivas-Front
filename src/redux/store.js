@@ -14,6 +14,7 @@ import adminCategoriesReducer from "./slices/Admin/adminCategoriesSlice.js";
 import adminUsersReducer from "./slices/Admin/adminUsersSlice.js";
 import adminOrdersReducer from "./slices/Admin/adminOrdersSlice.js";
 import stripeReducer from "./slices/stripeSlice.js";
+import cartReducer from "./slices/cartSlice.js";
 
 export const store = configureStore({
   reducer: {
@@ -32,5 +33,6 @@ export const store = configureStore({
     adminUsers: adminUsersReducer,
     adminOrders: adminOrdersReducer,
     stripe: stripeReducer,
+    cart: cartReducer,
   },
 });

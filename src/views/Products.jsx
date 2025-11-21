@@ -3,37 +3,25 @@ import { Link, useSearchParams } from "react-router-dom";
 import ProductGrid from "../components/Product/ProductGrid";
 import ProductFilters from "../components/Product/ProductFilters";
 import { useCart } from "../hook/useCart";
-
-const URLproducts = "api/products";
-const URLcategories = "api/categories";
-const options = {
-  method: "GET",
-  headers: {
-    "Content-Type": "application/json",
-  },
-};
+import { useProducts } from "../hook/useProducts";
+import { useCategories } from "../hook/useCategories";
 
 const Products = () => {
   const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("name");
-  const [productsLoaded, setProductsLoaded] = useState(false);
-  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  
   const { addToCart } = useCart();
+  const { products, isLoading: productsLoading } = useProducts();
+  const { categories, isLoading: categoriesLoading } = useCategories();
 
-  const handleAddToCart = async (product) => {
-    const success = await addToCart(product, 1);
-    if (success) {
-      console.log(`Producto ${product.name} agregado al carrito`);
-    } else {
-      console.log(`Producto ${product.name} no agregado al carrito`);
-    }
+  const isLoading = productsLoading || categoriesLoading;
+
+  const handleAddToCart = (product) => {
+    // Retornar la promesa para que ProductCard pueda esperar
+    return addToCart(product, 1);
   };
-
 
   useEffect(() => {
     const categoryFromUrl = searchParams.get("category");
@@ -48,87 +36,23 @@ const Products = () => {
     }
   }, [searchParams]);
 
-  // Fetch products
-  useEffect(() => {
-    let isMounted = true;
-
-    fetch(URLproducts, options)
-      .then((response) => response.json())
-      .then((data) => {
-        if (isMounted) {
-          setProducts(data);
-          setProductsLoaded(true);
-          console.log("Products loaded:", data);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching products:", error);
-        setProductsLoaded(true);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // Fetch categories
-  useEffect(() => {
-    let isMounted = true;
-
-    fetch(URLcategories, options)
-      .then((response) => response.json())
-      .then((data) => {
-        if (isMounted) {
-          setCategories(data);
-          setCategoriesLoaded(true);
-          console.log("Categories loaded:", data);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching categories:", error);
-        setCategoriesLoaded(true);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // Update loading state when both products and categories are loaded
-  useEffect(() => {
-    if (productsLoaded && categoriesLoaded) {
-      setIsLoading(false);
-    }
-  }, [productsLoaded, categoriesLoaded]);
-
   // Filter and sort products
   const filteredProducts = products.filter((product) => {
-    // Category matching - compare category ID since categories are objects
+    // Category matching
     let matchesCategory = selectedCategory === "all";
     if (!matchesCategory) {
-      // Find the selected category object to get its ID
       const selectedCategoryObj = categories.find(
         (cat) => cat.description === selectedCategory
       );
-      console.log("Selected category:", selectedCategory);
-      console.log("Found category object:", selectedCategoryObj);
-      console.log("Product category info:", {
-        category: product.category,
-        category_id: product.category_id,
-        category_name: product.category_name
-      });
 
       if (selectedCategoryObj) {
         // Try different possible category structures
         if (product.category_id) {
           matchesCategory = product.category_id === selectedCategoryObj.id;
-          console.log("Category match (category_id):", matchesCategory, "Expected:", selectedCategoryObj.id, "Actual:", product.category_id);
         } else if (product.category && product.category.id) {
           matchesCategory = product.category.id === selectedCategoryObj.id;
-          console.log("Category match (category.id):", matchesCategory, "Expected:", selectedCategoryObj.id, "Actual:", product.category.id);
         } else if (product.category_name) {
           matchesCategory = product.category_name === selectedCategoryObj.description;
-          console.log("Category match (category_name):", matchesCategory, "Expected:", selectedCategoryObj.description, "Actual:", product.category_name);
         }
       }
     }
@@ -142,12 +66,6 @@ const Products = () => {
     return matchesCategory && matchesSearch;
   });
 
-  console.log(
-    "Filtered products:",
-    filteredProducts.length,
-    "out of",
-    products.length
-  );
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     switch (sortBy) {
       case "deals":

@@ -1,15 +1,13 @@
 import HeartIcon from "../../icons/HeartIcon";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFavoritesContext } from "../../context/FavoritesContext";
 import { useAuth } from "../../hook/useAuth";
-import Toast from "../UI/Toast";
-import useToast from "../../hook/useToast";
+import { useCart } from "../../hook/useCart";
 
 const ProductCard = ({ product, onAddToCart }) => {
   const navigate = useNavigate();
   const { isLoggedIn, isAdmin } = useAuth();
-  const { toast, showToast, dismissToast } = useToast();
   const {
     toggleFavorite,
     isFavorite,
@@ -17,7 +15,10 @@ const ProductCard = ({ product, onAddToCart }) => {
   } = useFavoritesContext();
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isAdding, setIsAdding] = useState(false);
+  const [buttonState, setButtonState] = useState('idle'); // idle | adding | added
+  
+  // Para múltiples componentes, no usar callbacks de Redux
+  const { addToCart: addToCartAction } = useCart();
 
   // Ordenar imágenes por displayOrder
   const getSortedImages = () => {
@@ -120,27 +121,56 @@ const ProductCard = ({ product, onAddToCart }) => {
   const handleAddToCart = async (e) => {
     e.stopPropagation();
     
-    // Verificar si es admin ANTES de hacer nada
-    if (isAdmin) {
-      showToast("Admins cannot add products to cart", "error");
+    // Verificar si es admin o si ya está agregando
+    if (isAdmin || buttonState !== 'idle') {
       return;
     }
     
-    if (!onAddToCart) return;
-    if (isAdding) return;
+    // Cambiar estado del botón
+    setButtonState('adding');
     
-    setIsAdding(true);
+    // 🐛 DEBUG: Inicio
+    const startTime = performance.now();
+    console.log('🔵 [ProductCard] INICIO - Agregar al carrito');
+    
     try {
-      await onAddToCart(product);
-      showToast("Producto agregado al carrito", "success");
+      // Componente → Hook → Redux (arquitectura correcta)
+      if (onAddToCart) {
+        await onAddToCart(product);
+      } else {
+        await addToCartAction(product, 1).unwrap();
+      }
+      
+      // 🐛 DEBUG: Fin exitoso
+      const endTime = performance.now();
+      const totalTime = (endTime - startTime).toFixed(2);
+      console.log(`✅ [ProductCard] FIN - Tiempo total: ${totalTime}ms`);
+      
+      // Éxito: mostrar verde (solo llega aquí cuando la API responde OK)
+      setButtonState('added');
+      
+      // Volver a idle después de medio segundo
+      setTimeout(() => {
+        setButtonState('idle');
+      }, 1500);
     } catch (error) {
-      console.error("Error adding to cart:", error);
-      showToast(
-        error?.message || "Error al agregar al carrito",
-        "error"
-      );
-    } finally {
-      setIsAdding(false);
+      // 🐛 DEBUG: Fin con error
+      const endTime = performance.now();
+      const totalTime = (endTime - startTime).toFixed(2);
+      console.error(`❌ [ProductCard] ERROR después de ${totalTime}ms:`, error);
+      setButtonState('idle');
+    }
+  };
+  
+  // Texto del botón según estado
+  const getButtonText = () => {
+    switch (buttonState) {
+      case 'adding':
+        return 'Adding...';
+      case 'added':
+        return 'Product added to cart';
+      default:
+        return 'Add to cart';
     }
   };
 
@@ -281,20 +311,21 @@ const ProductCard = ({ product, onAddToCart }) => {
 
               <button
                 onClick={handleAddToCart}
-                disabled={isAdding}
-                className="bg-gray-900 text-white border-none px-8 py-4 rounded-lg font-medium cursor-pointer transition-all duration-300 text-base hover:bg-gray-700 w-full disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                disabled={buttonState !== 'idle'}
+                className={`border-none px-8 py-4 rounded-lg font-medium transition-all duration-300 text-base w-full ${
+                  buttonState === 'added'
+                    ? 'bg-green-600 text-white cursor-default'
+                    : buttonState === 'adding'
+                    ? 'bg-gray-600 text-white cursor-not-allowed'
+                    : 'bg-gray-900 text-white cursor-pointer hover:bg-gray-700'
+                }`}
               >
-                {isAdding && (
-                  <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                )}
-                <span>{isAdding ? "Adding..." : "Add to cart"}</span>
+                {getButtonText()}
               </button>
             </div>
           </div>
         </div>
       </div>
-
-      <Toast toast={toast} onClose={dismissToast} />
     </>
   );
 };

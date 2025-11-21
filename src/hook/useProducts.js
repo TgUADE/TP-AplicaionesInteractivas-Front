@@ -1,111 +1,69 @@
-import { useState, useEffect, use } from "react";
-import { useDispatch , useSelector } from "react-redux";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { fetchProducts } from "../redux/slices/productSlice.js";
 import { fetchCategories } from "../redux/slices/categorySlice.js";
 
-const URLcategories = "/api/categories";
-const options = {
-  method: "GET",
-  headers: {
-    "Content-Type": "application/json",
-  },
-};
-
 export const useProducts = () => {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [productsLoaded, setProductsLoaded] = useState(false);
-  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const dispatch = useDispatch();
-  const {items, error, loading}=useSelector(state=>state.products);
-  const {items: categoryItems, error: categoryError, loading: categoryLoading}=useSelector(state=>state.categories);
+  const productsState = useSelector((state) => state.products);
+  const categoriesState = useSelector((state) => state.categories);
+  
+  const { items, loading, error } = productsState || {
+    items: [],
+    loading: false,
+    error: null,
+  };
 
-  // Fetch products
-  useEffect(() => {
-    dispatch(fetchProducts());
-  }, [dispatch]);
+  const { items: categories, loading: categoriesLoading } = categoriesState || {
+    items: [],
+    loading: false,
+  };
 
-  // Success fetch products
+  // Fetch products al montar
   useEffect(() => {
-    if (items.length > 0) {
-      setProducts(items);
-      setProductsLoaded(true);
+    if (items.length === 0 && !loading) {
+      dispatch(fetchProducts());
     }
-  }, [items]);
-  // Error fetch products
+  }, [dispatch, items.length, loading]);
+
+  // Fetch categories al montar
   useEffect(() => {
-    if (error) {
-      console.error("Error fetching products:", error);
+    if (categories.length === 0 && !categoriesLoading) {
+      dispatch(fetchCategories());
     }
-  }, [error]);
-  // Loading state
-  useEffect(() => {
-    if (loading) {
-      setIsLoading(true);
-    } else {
-      setIsLoading(false);
-    }
-  }, [loading]);
+  }, [dispatch, categories.length, categoriesLoading]);
 
-
-  // Fetch categories with category redux slice
-  useEffect(() => {
-    dispatch(fetchCategories());
-  }, [dispatch]);
-
-  // Success fetch categories
-  useEffect(() => {
-    if (categoryItems.length > 0) {
-      setCategories(categoryItems);
-      setCategoriesLoaded(true);
-    }
-  }, [categoryItems]);
-
-  // Error fetch categories
-  useEffect(() => {
-    if (categoryError) {
-      console.error("Error fetching categories:", categoryError);
-    }
-  }, [categoryError]);
-
-  // Loading state
-  useEffect(() => {
-    if (categoryLoading) {
-      setIsLoading(true);
-    } else {
-      setIsLoading(false);
-    }
-  }, [categoryLoading]);
-
-  // Update loading state
-  useEffect(() => {
-    if (productsLoaded && categoriesLoaded) {
-      setIsLoading(false);
-    }
-  }, [productsLoaded, categoriesLoaded]);
-
-  // Filter products by category
+  // Función para filtrar productos por categoría
   const filterProductsByCategory = (products, categories, selectedCategory) => {
+    if (selectedCategory === "all") {
+      return products;
+    }
+
+    const selectedCategoryObj = categories.find(
+      (cat) => cat.description === selectedCategory
+    );
+
+    if (!selectedCategoryObj) {
+      return products;
+    }
+
     return products.filter((product) => {
-      if (selectedCategory === "all") return true;
-
-      const selectedCategoryObj = categories.find(
-        (cat) => cat.description === selectedCategory
-      );
-
-      if (selectedCategoryObj && product.category) {
+      if (product.category_id) {
+        return product.category_id === selectedCategoryObj.id;
+      } else if (product.category && product.category.id) {
         return product.category.id === selectedCategoryObj.id;
+      } else if (product.category_name) {
+        return product.category_name === selectedCategoryObj.description;
       }
-
       return false;
     });
   };
 
   return {
-    products,
+    products: items,
     categories,
-    isLoading,
+    isLoading: loading || categoriesLoading,
+    error,
     filterProductsByCategory,
   };
 };

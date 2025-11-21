@@ -11,7 +11,6 @@ const CheckoutSuccess = () => {
   const [searchParams] = useSearchParams();
   const { token, isLoggedIn } = useAuth();
   const { createOrder } = useOrder();
-  const { createCart } = useCart();
   const [processingOrder, setProcessingOrder] = useState(true);
   const [orderData, setOrderData] = useState(null);
   const [error, setError] = useState(null);
@@ -61,11 +60,7 @@ const CheckoutSuccess = () => {
         if (orderResult) {
           setOrderData(orderResult);
           setError(null); // Limpiar cualquier error
-
-          // Crear nuevo carrito
-          console.log("🛒 Creando nuevo carrito...");
-          await createCart();
-          console.log("✅ Nuevo carrito creado");
+          console.log("✅ Orden procesada exitosamente");
         } else {
           throw new Error("No se recibió la orden del backend");
         }
@@ -88,10 +83,10 @@ const CheckoutSuccess = () => {
     isLoggedIn,
     token,
     createOrder,
-    createCart,
     shippingAddress,
     billingAddress,
     hasProcessed,
+    processingOrder,
   ]);
 
   if (processingOrder) {

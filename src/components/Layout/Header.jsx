@@ -4,9 +4,13 @@ import CartIcon from "../../icons/CartIcon";
 import HeartIcon from "../../icons/HeartIcon";
 import SearchIcon from "../../icons/SearchIcon";
 import Input from "../UI/Input";
+import { useCart } from "../../hook/useCart";
 
 const Header = () => {
   const location = useLocation();
+  const { getTotalItems, isLoggedIn, cartItems } = useCart();
+  
+  const totalItems = getTotalItems();
 
   return (
     <nav className="bg-white shadow-lg sticky top-0 z-50 backdrop-blur-md w-full">
@@ -72,7 +76,10 @@ const Header = () => {
             to="/cart"
             className="text-2xl no-underline transition-all duration-300 p-2 rounded-full hover:bg-gray-50 hover:scale-110"
           >
-            <CartIcon />
+            <CartIcon 
+              itemCount={cartItems.length} 
+              isLocalCart={!isLoggedIn}
+            />
           </Link>
           <Link
             to="/profile"

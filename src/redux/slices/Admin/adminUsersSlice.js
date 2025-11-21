@@ -11,22 +11,12 @@ const getAuthHeaders = (state) => {
   return { Authorization: `Bearer ${token}` };
 };
 
-const getErrorMessage = (error) =>
-  error?.response?.data?.message ||
-  error?.response?.data?.error ||
-  error?.message ||
-  "Error inesperado";
-
 export const fetchAdminUsers = createAsyncThunk(
   "adminUsers/fetchAll",
-  async (_, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await api.get("/users", { headers });
-      return Array.isArray(data) ? data : [];
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async (_, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    const { data } = await api.get("/users", { headers });
+    return Array.isArray(data) ? data : [];
   }
 );
 
@@ -52,8 +42,7 @@ const adminUsersSlice = createSlice({
       })
       .addCase(fetchAdminUsers.rejected, (state, action) => {
         state.loading = false;
-        state.error =
-          action.payload || action.error?.message || "Error inesperado";
+        state.error = action.error.message;
       });
   },
 });

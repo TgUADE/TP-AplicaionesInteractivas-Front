@@ -140,7 +140,7 @@ const Home = () => {
         <ProductGrid
           products={getProductsToShow()}
           isLoading={getLoadingState()}
-          onAddToCart={(product) => addToCart(product, 1)}
+          onAddToCart={(product) => { return addToCart(product, 1); }}
         />
       </section>
     </div>

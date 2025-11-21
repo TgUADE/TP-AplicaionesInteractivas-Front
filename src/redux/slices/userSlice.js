@@ -39,7 +39,7 @@ export const userSlice = createSlice({
   name: 'user',
   initialState: {
     profile: null,
-    isLoading: false,
+    loading: false,
     error: null,
     isInitialized: false,
     role: null,
@@ -47,7 +47,7 @@ export const userSlice = createSlice({
   reducers: {
     clearUserProfile: (state) => {
       state.profile = null;
-      state.isLoading = false;
+      state.loading = false;
       state.error = null;
       state.isInitialized = false;
       state.role = null;
@@ -57,50 +57,50 @@ export const userSlice = createSlice({
     builder
       // Fetch Profile
       .addCase(fetchUserProfile.pending, (state) => {
-        state.isLoading = true;
+        state.loading = true;
         state.error = null;
       })
       .addCase(fetchUserProfile.fulfilled, (state, action) => {
-        state.isLoading = false;
+        state.loading = false;
         state.profile = action.payload;
         state.isInitialized = true;
         state.error = null;
         state.role = action.payload.role;
       })
       .addCase(fetchUserProfile.rejected, (state, action) => {
-        state.isLoading = false;
+        state.loading = false;
         state.error = action.error.message;
         state.profile = null;
       })
       // Update Profile
       .addCase(updateUserProfile.pending, (state) => {
-        state.isLoading = true;
+        state.loading = true;
         state.error = null;
       })
       .addCase(updateUserProfile.fulfilled, (state, action) => {
-        state.isLoading = false;
+        state.loading = false;
         state.profile = action.payload;
         state.error = null;
         state.role = action.payload.role;
       })
       .addCase(updateUserProfile.rejected, (state, action) => {
-        state.isLoading = false;
+        state.loading = false;
         state.error = action.error.message;
       })
       // Delete Account
       .addCase(deleteUserAccount.pending, (state) => {
-        state.isLoading = true;
+        state.loading = true;
         state.error = null;
       })
       .addCase(deleteUserAccount.fulfilled, (state) => {
-        state.isLoading = false;
+        state.loading = false;
         state.profile = null;
         state.error = null;
         state.isInitialized = false;
         state.role = null;
       })
       .addCase(deleteUserAccount.rejected, (state, action) => {
-        state.isLoading = false;
+        state.loading = false;
         state.error = action.error.message;
       });
   },

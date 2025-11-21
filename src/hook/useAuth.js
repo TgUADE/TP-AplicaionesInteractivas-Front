@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   loginUser,
@@ -9,13 +9,23 @@ import {
 import { clearUserProfile } from "../redux/slices/userSlice";
 import { clearOrderState } from "../redux/slices/orderSlice";
 
-export const useAuth = () => {
+export const useAuth = (callbacks = {}) => {
   const dispatch = useDispatch();
   const { token, isLoggedIn, isLoading, error, isInitialized } = useSelector(
     (state) => state.auth
   );
   const { profile } = useSelector((state) => state.user);
   const [isAdmin, setIsAdmin] = useState(false);
+  
+  // Referencias para tracking de acciones
+  const lastActionRef = useRef(null);
+  const prevLoadingRef = useRef(isLoading);
+  const callbacksRef = useRef(callbacks);
+  
+  // Actualizar ref de callbacks cuando cambien
+  useEffect(() => {
+    callbacksRef.current = callbacks;
+  }, [callbacks]);
 
   // Inicializar auth desde localStorage al montar
   useEffect(() => {
@@ -31,47 +41,65 @@ export const useAuth = () => {
     }
   }, [profile]);
 
-  // Login function
-  const login = async (credentials) => {
-    try {
-      console.log("🔐 Attempting login with credentials:", credentials);
-      const resultAction = await dispatch(loginUser(credentials));
-
-      if (loginUser.fulfilled.match(resultAction)) {
-        const userData = resultAction.payload;
-        console.log("✅ Login successful:", userData);
-        return userData;
-      } else {
-        throw new Error(resultAction.error?.message || "Login failed");
-      }
-    } catch (err) {
-      console.error("❌ Login failed:", err);
-      throw err;
+  // Observar cambios en el estado de Redux para mostrar toast
+  // Patrón: detectar cuando loading pasa de true -> false
+  useEffect(() => {
+    const wasLoading = prevLoadingRef.current;
+    const isNowLoading = isLoading;
+    
+    // Actualizar ref para próxima iteración
+    prevLoadingRef.current = isLoading;
+    
+    // Solo actuar cuando termina de cargar (transición true -> false)
+    if (!wasLoading || isNowLoading) {
+      return;
     }
+    
+    // Usar callbacksRef para obtener los callbacks actuales
+    const currentCallbacks = callbacksRef.current;
+    
+    // Determinar qué acción terminó y llamar callback apropiado
+    if (lastActionRef.current === 'login') {
+      if (isLoggedIn && !error) {
+        // Login exitoso
+        currentCallbacks.onLoginSuccess?.();
+      } else if (error) {
+        // Login fallido
+        currentCallbacks.onLoginError?.(error);
+      }
+      lastActionRef.current = null;
+    } else if (lastActionRef.current === 'register') {
+      if (isLoggedIn && !error) {
+        // Registro exitoso
+        currentCallbacks.onRegisterSuccess?.();
+      } else if (error) {
+        // Registro fallido
+        currentCallbacks.onRegisterError?.(error);
+      }
+      lastActionRef.current = null;
+    } else if (lastActionRef.current === 'logout') {
+      // Logout completado
+      currentCallbacks.onLogoutSuccess?.();
+      lastActionRef.current = null;
+    }
+  }, [isLoading, isLoggedIn, error]);
+
+  // Login function - solo dispatch, no manejo de toast
+  const login = (credentials) => {
+    lastActionRef.current = 'login';
+    return dispatch(loginUser(credentials));
   };
 
-  // Register function
-  const register = async (userInfo) => {
-    try {
-      console.log("📝 Attempting registration:", userInfo);
-      const resultAction = await dispatch(registerUser(userInfo));
-
-      if (registerUser.fulfilled.match(resultAction)) {
-        const userData = resultAction.payload;
-        console.log("✅ Registration successful:", userData);
-        return userData;
-      } else {
-        throw new Error(resultAction.error?.message || "Registration failed");
-      }
-    } catch (err) {
-      console.error("❌ Registration failed:", err);
-      throw err;
-    }
+  // Register function - solo dispatch, no manejo de toast
+  const register = (userInfo) => {
+    lastActionRef.current = 'register';
+    return dispatch(registerUser(userInfo));
   };
 
   // Logout function
   const logout = () => {
     console.log("🚪 Iniciando logout...");
+    lastActionRef.current = 'logout';
 
     // Limpiar perfil de usuario
     dispatch(clearUserProfile());
@@ -81,8 +109,6 @@ export const useAuth = () => {
     dispatch(logoutAction());
 
     console.log("✅ Logout exitoso");
-
-    
   };
 
   return {

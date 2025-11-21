@@ -11,112 +11,78 @@ const getAuthHeaders = (state) => {
   return { Authorization: `Bearer ${token}` };
 };
 
-const getErrorMessage = (error) =>
-  error?.response?.data?.message ||
-  error?.response?.data?.error ||
-  error?.message ||
-  "Error inesperado";
-
 export const fetchAdminProducts = createAsyncThunk(
   "adminProducts/fetchAll",
-  async (_, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await api.get("/products", { headers });
-      return Array.isArray(data) ? data : [];
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async (_, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    const { data } = await api.get("/products", { headers });
+    return Array.isArray(data) ? data : [];
   }
 );
 
 export const createAdminProduct = createAsyncThunk(
   "adminProducts/create",
-  async (payload, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await api.post("/products", payload, { headers });
-      return data;
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async (payload, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    const { data } = await api.post("/products", payload, { headers });
+    return data;
   }
 );
 
 export const updateAdminProduct = createAsyncThunk(
   "adminProducts/update",
-  async ({ productId, payload }, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await api.put(`/products/${productId}`, payload, {
-        headers,
-      });
-      return data;
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async ({ productId, payload }, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    const { data } = await api.put(`/products/${productId}`, payload, {
+      headers,
+    });
+    return data;
   }
 );
 
 export const deleteAdminProduct = createAsyncThunk(
   "adminProducts/delete",
-  async (productId, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      await api.delete(`/products/${productId}`, { headers });
-      return productId;
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async (productId, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    await api.delete(`/products/${productId}`, { headers });
+    return productId;
   }
 );
 
 export const uploadAdminProductImage = createAsyncThunk(
   "adminProducts/uploadImage",
-  async ({ productId, payload }, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await api.post(
-        `/products/${productId}/images`,
-        payload,
-        { headers }
-      );
-      return { productId, image: data };
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async ({ productId, payload }, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    const { data } = await api.post(
+      `/products/${productId}/images`,
+      payload,
+      { headers }
+    );
+    return { productId, image: data };
   }
 );
 
 export const updateAdminProductImage = createAsyncThunk(
   "adminProducts/updateImage",
-  async ({ productId, imageId, payload }, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await api.put(
-        `/products/${productId}/images/${imageId}`,
-        payload,
-        { headers }
-      );
-      return { productId, image: data };
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async ({ productId, imageId, payload }, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    const { data } = await api.put(
+      `/products/${productId}/images/${imageId}`,
+      payload,
+      { headers }
+    );
+    return { productId, image: data };
   }
 );
 
 export const deleteAdminProductImage = createAsyncThunk(
   "adminProducts/deleteImage",
-  async ({ productId, imageId }, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      await api.delete(`/products/${productId}/images/${imageId}`, {
-        headers,
-      });
-      return { productId, imageId };
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async ({ productId, imageId }, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    await api.delete(`/products/${productId}/images/${imageId}`, {
+      headers,
+    });
+    return { productId, imageId };
   }
 );
 
@@ -144,8 +110,7 @@ const adminProductsSlice = createSlice({
       })
       .addCase(fetchAdminProducts.rejected, (state, action) => {
         state.loading = false;
-        state.error =
-          action.payload || action.error?.message || "Error inesperado";
+        state.error = action.error.message;
       })
       .addCase(createAdminProduct.pending, (state) => {
         state.mutationStatus = "loading";
@@ -161,8 +126,7 @@ const adminProductsSlice = createSlice({
       })
       .addCase(createAdminProduct.rejected, (state, action) => {
         state.mutationStatus = "failed";
-        state.mutationError =
-          action.payload || action.error?.message || "Error inesperado";
+        state.mutationError = action.error.message;
       })
       .addCase(updateAdminProduct.pending, (state) => {
         state.mutationStatus = "loading";
@@ -180,8 +144,7 @@ const adminProductsSlice = createSlice({
       })
       .addCase(updateAdminProduct.rejected, (state, action) => {
         state.mutationStatus = "failed";
-        state.mutationError =
-          action.payload || action.error?.message || "Error inesperado";
+        state.mutationError = action.error.message;
       })
       .addCase(deleteAdminProduct.pending, (state) => {
         state.mutationStatus = "loading";
@@ -195,8 +158,7 @@ const adminProductsSlice = createSlice({
       })
       .addCase(deleteAdminProduct.rejected, (state, action) => {
         state.mutationStatus = "failed";
-        state.mutationError =
-          action.payload || action.error?.message || "Error inesperado";
+        state.mutationError = action.error.message;
       })
       .addCase(uploadAdminProductImage.pending, (state) => {
         state.mutationStatus = "loading";
@@ -215,8 +177,7 @@ const adminProductsSlice = createSlice({
       })
       .addCase(uploadAdminProductImage.rejected, (state, action) => {
         state.mutationStatus = "failed";
-        state.mutationError =
-          action.payload || action.error?.message || "Error inesperado";
+        state.mutationError = action.error.message;
       })
       .addCase(updateAdminProductImage.pending, (state) => {
         state.mutationStatus = "loading";
@@ -236,8 +197,7 @@ const adminProductsSlice = createSlice({
       })
       .addCase(updateAdminProductImage.rejected, (state, action) => {
         state.mutationStatus = "failed";
-        state.mutationError =
-          action.payload || action.error?.message || "Error inesperado";
+        state.mutationError = action.error.message;
       })
       .addCase(deleteAdminProductImage.pending, (state) => {
         state.mutationStatus = "loading";
@@ -255,8 +215,7 @@ const adminProductsSlice = createSlice({
       })
       .addCase(deleteAdminProductImage.rejected, (state, action) => {
         state.mutationStatus = "failed";
-        state.mutationError =
-          action.payload || action.error?.message || "Error inesperado";
+        state.mutationError = action.error.message;
       });
   },
 });

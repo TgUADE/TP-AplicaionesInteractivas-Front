@@ -11,63 +11,41 @@ const getAuthHeaders = (state) => {
   return { Authorization: `Bearer ${token}` };
 };
 
-const getErrorMessage = (error) =>
-  error?.response?.data?.message ||
-  error?.response?.data?.error ||
-  error?.message ||
-  "Error inesperado";
-
 export const fetchAdminCategories = createAsyncThunk(
   "adminCategories/fetchAll",
-  async (_, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await api.get("/categories", { headers });
-      return Array.isArray(data) ? data : [];
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async (_, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    const { data } = await api.get("/categories", { headers });
+    return Array.isArray(data) ? data : [];
   }
 );
 
 export const createAdminCategory = createAsyncThunk(
   "adminCategories/create",
-  async (payload, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await api.post("/categories", payload, { headers });
-      return data;
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async (payload, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    const { data } = await api.post("/categories", payload, { headers });
+    return data;
   }
 );
 
 export const updateAdminCategory = createAsyncThunk(
   "adminCategories/update",
-  async ({ categoryId, payload }, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      const { data } = await api.put(`/categories/${categoryId}`, payload, {
-        headers,
-      });
-      return data;
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async ({ categoryId, payload }, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    const { data } = await api.put(`/categories/${categoryId}`, payload, {
+      headers,
+    });
+    return data;
   }
 );
 
 export const deleteAdminCategory = createAsyncThunk(
   "adminCategories/delete",
-  async (categoryId, { getState, rejectWithValue }) => {
-    try {
-      const headers = getAuthHeaders(getState());
-      await api.delete(`/categories/${categoryId}`, { headers });
-      return categoryId;
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
+  async (categoryId, { getState }) => {
+    const headers = getAuthHeaders(getState());
+    await api.delete(`/categories/${categoryId}`, { headers });
+    return categoryId;
   }
 );
 
@@ -95,8 +73,7 @@ const adminCategoriesSlice = createSlice({
       })
       .addCase(fetchAdminCategories.rejected, (state, action) => {
         state.loading = false;
-        state.error =
-          action.payload || action.error?.message || "Error inesperado";
+        state.error = action.error.message;
       })
       .addCase(createAdminCategory.pending, (state) => {
         state.mutationStatus = "loading";
@@ -112,8 +89,7 @@ const adminCategoriesSlice = createSlice({
       })
       .addCase(createAdminCategory.rejected, (state, action) => {
         state.mutationStatus = "failed";
-        state.mutationError =
-          action.payload || action.error?.message || "Error inesperado";
+        state.mutationError = action.error.message;
       })
       .addCase(updateAdminCategory.pending, (state) => {
         state.mutationStatus = "loading";
@@ -131,8 +107,7 @@ const adminCategoriesSlice = createSlice({
       })
       .addCase(updateAdminCategory.rejected, (state, action) => {
         state.mutationStatus = "failed";
-        state.mutationError =
-          action.payload || action.error?.message || "Error inesperado";
+        state.mutationError = action.error.message;
       })
       .addCase(deleteAdminCategory.pending, (state) => {
         state.mutationStatus = "loading";
@@ -148,8 +123,7 @@ const adminCategoriesSlice = createSlice({
       })
       .addCase(deleteAdminCategory.rejected, (state, action) => {
         state.mutationStatus = "failed";
-        state.mutationError =
-          action.payload || action.error?.message || "Error inesperado";
+        state.mutationError = action.error.message;
       });
   },
 });
