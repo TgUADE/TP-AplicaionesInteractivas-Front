@@ -168,7 +168,7 @@ const Products = () => {
     <div className="min-h-screen bg-white w-full">
       <section className="py-15 bg-white w-full px-10 lg:py-10 lg:px-5 md:py-8 md:px-4">
         <div className="mb-4">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Products</h1>
+          <h1 className="text-4xl font-semibold text-gray-900 mb-2">Products</h1>
           {selectedCategory !== "all" && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Link to="/home" className="hover:text-blue-500">

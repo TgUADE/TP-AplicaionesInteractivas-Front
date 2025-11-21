@@ -5,11 +5,10 @@ import axios from "axios";
 export const createCheckoutSession = createAsyncThunk(
   "stripe/createCheckoutSession",
   async (
-    { cartProducts, cartId, checkoutData, token },
-    { rejectWithValue }
+    { cartProducts, cartId, checkoutData, token }
+    
   ) => {
-    try {
-      // Preparar productos en el formato que espera el backend
+    
       const products = cartProducts.map((item) => ({
         name: item.product.name,
         description: item.product.description,
@@ -44,21 +43,10 @@ export const createCheckoutSession = createAsyncThunk(
           },
         }
       );
-      console.log("📥 Respuesta del backend:", data);
+      
       return data;
-    } catch (error) {
-      console.error("❌ Error en createCheckoutSession:");
-      console.error("   Status:", error.response?.status);
-      console.error("   Data:", error.response?.data);
-      console.error("   Headers:", error.response?.headers);
-      console.error("   Error completo:", error);
-      return rejectWithValue(
-        error.response?.data?.error ||
-          error.response?.data?.message ||
-          "Error creating checkout session"
-      );
+    
     }
-  }
 );
 
 const stripeSlice = createSlice({
