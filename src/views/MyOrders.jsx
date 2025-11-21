@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback } from "react";
+import { useEffect, useMemo, useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
@@ -8,8 +8,9 @@ import { useAuth } from "../hook/useAuth";
 
 const statusStyles = {
   PENDING: "bg-amber-100 text-amber-800 border border-amber-200",
-  SHIPPED: "bg-green-100 text-green-800 border border-green-200",
+  SHIPPED: "bg-blue-100 text-blue-800 border border-blue-200",
   CANCELLED: "bg-red-100 text-red-800 border border-red-200",
+  CONFIRMED : "bg-green-100 text-green-800 border border-green-200",
 };
 
 const parseOrderItems = (order) => {
@@ -82,6 +83,10 @@ const MyOrders = () => {
   const navigate = useNavigate();
   const { isLoggedIn, isInitialized } = useAuth();
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 5;
+
   const {
     myOrders = [],
     myOrdersLoading = false,
@@ -130,6 +135,22 @@ const MyOrders = () => {
       }),
   [myOrders]
 );
+
+  // Pagination calculations
+  const totalPages = Math.ceil(ordersWithItems.length / ordersPerPage);
+  const indexOfLastOrder = currentPage * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const currentOrders = ordersWithItems.slice(indexOfFirstOrder, indexOfLastOrder);
+
+  // Reset to page 1 when orders change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [myOrders]);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   if (!isInitialized) {
     return (
@@ -223,9 +244,10 @@ const MyOrders = () => {
             </button>
           </div>
         ) : (
-          <div className="space-y-8">
-            {ordersWithItems.map(({ order, items }) => {
-              const orderId = getOrderId(order);
+          <>
+            <div className="space-y-8">
+              {currentOrders.map(({ order, items }) => {
+                const orderId = getOrderId(order);
               const statusKey = (order?.status ?? "").toUpperCase();
               const statusBadgeClass =
                 statusStyles[statusKey] ??
@@ -330,6 +352,69 @@ const MyOrders = () => {
               );
             })}
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-sm text-gray-600">
+                Showing {indexOfFirstOrder + 1} to {Math.min(indexOfLastOrder, ordersWithItems.length)} of {ordersWithItems.length} orders
+              </p>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+                >
+                  Previous
+                </button>
+
+                <div className="flex gap-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    // Show first page, last page, current page, and pages around current
+                    if (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`w-10 h-10 rounded-lg transition-colors duration-200 ${
+                            currentPage === page
+                              ? 'bg-black text-white'
+                              : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    } else if (
+                      page === currentPage - 2 ||
+                      page === currentPage + 2
+                    ) {
+                      return (
+                        <span key={page} className="w-10 h-10 flex items-center justify-center text-gray-400">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </>
         )}
       </section>
     </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ProductGrid from "../components/Product/ProductGrid";
 import CategoryNav from "../components/Category/CategoryNav";
@@ -14,12 +14,14 @@ import ProductBannerBigSquare from "../components/Home/ProductBanner-BigSquare";
 const Home = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [activeSection, setActiveSection] = useState("deals"); 
+  const [activeSection, setActiveSection] = useState("deals");
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 8;
+  const productsSectionRef = useRef(null);
+  
   const handleBannerClick = (productId) => {
     navigate(`/product/${productId}`);
-  };
-
-  const { products, categories, isLoading, filterProductsByCategory } =
+  };  const { products, categories, isLoading, filterProductsByCategory } =
     useProducts();
   const { promotionalProducts, isLoadingPromotions } = usePromotions();
   const { addToCart } = useCart();
@@ -53,6 +55,26 @@ const Home = () => {
     }
   };
 
+  const allProducts = getProductsToShow();
+  
+  // Pagination calculations
+  const totalPages = Math.ceil(allProducts.length / productsPerPage);
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = allProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+
+  // Reset to page 1 when section or category changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeSection, selectedCategory]);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    if (productsSectionRef.current) {
+      productsSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white w-full">
       {/* Hero Section */}
@@ -80,7 +102,7 @@ const Home = () => {
       </section>
 
       {/* Products Section */}
-      <section className="py-15 bg-white w-full px-10 lg:py-10 lg:px-5 md:py-8 md:px-4">
+      <section ref={productsSectionRef} className="py-15 bg-white w-full px-10 lg:py-10 lg:px-5 md:py-8 md:px-4">
         <div className="mb-10">
           <div className="mb-5">
             <span className="text-gray-800 underline font-medium text-lg">
@@ -138,10 +160,71 @@ const Home = () => {
         </div>
 
         <ProductGrid
-          products={getProductsToShow()}
+          products={currentProducts}
           isLoading={getLoadingState()}
           onAddToCart={(product) => { return addToCart(product, 1); }}
         />
+
+        {/* Pagination Controls */}
+        {!getLoadingState() && totalPages > 1 && (
+          <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-gray-600">
+              Showing {indexOfFirstProduct + 1} to {Math.min(indexOfLastProduct, allProducts.length)} of {allProducts.length} products
+            </p>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+              >
+                Previous
+              </button>
+
+              <div className="flex gap-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  if (
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`w-10 h-10 rounded-lg transition-colors duration-200 ${
+                          currentPage === page
+                            ? 'bg-black text-white'
+                            : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  } else if (
+                    page === currentPage - 2 ||
+                    page === currentPage + 2
+                  ) {
+                    return (
+                      <span key={page} className="w-10 h-10 flex items-center justify-center text-gray-400">
+                        ...
+                      </span>
+                    );
+                  }
+                  return null;
+                })}
+              </div>
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );
