@@ -6,14 +6,17 @@ export const useProduct = (productId) => {
   const [product, setProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const dispatch = useDispatch();
-  const productDetail = useSelector(state => state.productDetail);
-  const { item, error, loading } = productDetail || { item: null, error: null, loading: false };
+  const productDetail = useSelector((state) => state.productDetail);
+  const { item, error, loading } = productDetail || {
+    item: null,
+    error: null,
+    loading: false,
+  };
 
   // Fetch product by ID
   useEffect(() => {
     if (productId) {
       dispatch(fetchProductById(productId));
-    } else {
     }
   }, [dispatch, productId]);
 
