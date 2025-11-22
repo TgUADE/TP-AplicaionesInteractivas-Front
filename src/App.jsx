@@ -21,6 +21,7 @@ import PromotionsAdmin from "./views/Admin/PromotionsAdmin";
 import CategoriesAdmin from "./views/Admin/CategoriesAdmin";
 import UsersAdmin from "./views/Admin/UsersAdmin";
 import OrdersAdmin from "./views/Admin/OrdersAdmin";
+import Bot from "./components/Bot";
 
 function App() {
   // Ejecutar useUserProfile a nivel de app para que siempre cargue el perfil
@@ -31,6 +32,7 @@ function App() {
     <FavoritesProvider>
       <ScrollToTop />
       <Navigation />
+      <Bot />
       <Routes>
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/home" element={<Home />} />
