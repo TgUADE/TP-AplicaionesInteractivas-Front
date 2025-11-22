@@ -26,7 +26,7 @@ const Auth = () => {
     },
     onLoginError: (error) => {
       console.error("❌ Login error:", error);
-      showToast("Login failed: " + (error || "Unknown error"), "error");
+      showToast("Login failed, please try again", "error");
     },
     onRegisterSuccess: () => {
       console.log("✅ Registration successful");
@@ -38,7 +38,7 @@ const Auth = () => {
     },
     onRegisterError: (error) => {
       console.error("❌ Registration error:", error);
-      showToast("Registration failed: " + (error || "Unknown error"), "error");
+      showToast("Registration failed , please try again", "error");
     },
   }), [showToast, navigate]);
   

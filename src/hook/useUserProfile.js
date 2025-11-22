@@ -1,11 +1,10 @@
 import { useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./useAuth";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchUserProfile, updateUserProfile, deleteUserAccount } from "../redux/slices/userSlice";
+import { fetchUserProfile, updateUserProfile, deleteUserAccount, clearUserProfile } from "../redux/slices/userSlice";
 
 export const useUserProfile = (callbacks = {}) => {
   const { token, isLoggedIn, isInitialized: authInitialized, logout } = useAuth();
-  const hasLoadedRef = useRef(false);
   const dispatch = useDispatch();
   const { profile, loading, error, isInitialized } = useSelector((state) => state.user);
   
@@ -13,6 +12,7 @@ export const useUserProfile = (callbacks = {}) => {
   const lastActionRef = useRef(null);
   const prevLoadingRef = useRef(loading);
   const callbacksRef = useRef(callbacks);
+  const loadedTokenRef = useRef(null); // Token del perfil actualmente cargado
   
   // Actualizar ref de callbacks cuando cambien
   useEffect(() => {
@@ -97,29 +97,54 @@ export const useUserProfile = (callbacks = {}) => {
     }
   }, [error, isLoggedIn, token, profile, logout]);
 
-  // Load profile when auth initializes or changes
+  // Load profile when needed
   useEffect(() => {
+    console.log("📊 [useUserProfile] Estado actual:", {
+      authInitialized,
+      isLoggedIn,
+      hasToken: !!token,
+      isInitialized,
+      loading,
+      hasProfile: !!profile,
+      loadedToken: loadedTokenRef.current ? "exists" : "null"
+    });
+
     if (!authInitialized) {
+      console.log("⏳ Auth no inicializado aún");
       return;
     }
 
-    // Resetear flag cuando el perfil se limpia (isInitialized vuelve a false)
-    if (!isInitialized && hasLoadedRef.current) {
-      console.log("🔄 Perfil limpiado - reseteando flag de carga");
-      hasLoadedRef.current = false;
+    // Si no hay usuario logueado, limpiar el token cargado
+    if (!isLoggedIn || !token) {
+      if (loadedTokenRef.current) {
+        console.log("🔄 Usuario deslogueado - limpiando referencia de token");
+        loadedTokenRef.current = null;
+      }
+      return;
     }
 
-    // Solo cargar perfil si:
-    // 1. Usuario está logueado y hay token
-    // 2. El perfil no está inicializado
-    // 3. No está cargando
-    // 4. No se ha cargado antes (evita recargas innecesarias)
-    if (isLoggedIn && token && !isInitialized && !loading && !hasLoadedRef.current) {
-      console.log("🔄 Cargando perfil de usuario...");
-      hasLoadedRef.current = true;
-      fetchProfile();
+    // Si el token que tenemos es diferente al token cargado
+    if (loadedTokenRef.current !== token) {
+      console.log("🔑 Token diferente detectado:");
+      console.log("   - Cargado:", loadedTokenRef.current ? "exists" : "null");
+      console.log("   - Actual:", token ? "exists" : "null");
+      
+      // Si había un token anterior diferente, limpiar perfil
+      if (loadedTokenRef.current && loadedTokenRef.current !== token) {
+        console.log("   → Limpiando perfil anterior");
+        dispatch(clearUserProfile());
+      }
+      
+      // Si no está cargando, cargar el perfil del nuevo token
+      if (!loading) {
+        console.log("   → Cargando perfil para nuevo token");
+        loadedTokenRef.current = token;
+        fetchProfile();
+      }
+    } else {
+      console.log("✅ Token ya cargado, no se requiere acción");
     }
-  }, [authInitialized, isLoggedIn, token, isInitialized, loading, fetchProfile]);
+  }, [authInitialized, isLoggedIn, token, loading, fetchProfile, dispatch, profile, isInitialized]);
 
   return {
     profile,
