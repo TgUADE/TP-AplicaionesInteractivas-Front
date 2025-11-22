@@ -5,15 +5,26 @@ import axios from "axios";
 export const createCheckoutSession = createAsyncThunk(
   "stripe/createCheckoutSession",
   async ({ cartProducts, cartId, checkoutData, token }) => {
+    // Helper para obtener la imagen primaria
+    const getPrimaryImage = (images) => {
+      if (!images || images.length === 0) return [];
+      
+      // Buscar la imagen marcada como primaria
+      const primaryImage = images.find(img => img.isPrimary === true);
+      
+      // Si existe imagen primaria, usarla; sino usar la primera disponible
+      const imageToUse = primaryImage || images[0];
+      
+      return imageToUse?.imageUrl ? [imageToUse.imageUrl] : [];
+    };
+    
     // Preparar productos en el formato que espera el backend
     const products = cartProducts.map((item) => ({
       name: item.product.name,
       description: item.product.description,
       price: item.product.current_price || item.product.price,
       quantity: item.quantity,
-      images: item.product.images?.[0]?.imageUrl
-        ? [item.product.images[0].imageUrl]
-        : [],
+      images: getPrimaryImage(item.product.images),
     }));
 
     const { data } = await axios.post(

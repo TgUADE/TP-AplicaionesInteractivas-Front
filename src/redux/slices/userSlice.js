@@ -69,8 +69,13 @@ export const userSlice = createSlice({
       })
       .addCase(fetchUserProfile.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        // No establecer error si es 401/500 (token inválido o usuario eliminado)
+        const errorMessage = action.error.message || '';
+        if (errorMessage && !errorMessage.includes('401') && !errorMessage.includes('500')) {
+          state.error = errorMessage;
+        }
         state.profile = null;
+        state.isInitialized = true;
       })
       // Update Profile
       .addCase(updateUserProfile.pending, (state) => {

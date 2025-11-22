@@ -17,18 +17,10 @@ const CartIcon = ({ itemCount = 0, isLocalCart = false, className = "" }) => {
       </svg>
       {itemCount > 0 && (
         <span
-          className={`absolute -top-2 -right-2 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center ${
-            isLocalCart ? "bg-orange-500" : "bg-red-500"
-          }`}
+          className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
         >
           {itemCount > 99 ? "99+" : itemCount}
         </span>
-      )}
-      {isLocalCart && (
-        <span
-          className="absolute -bottom-1 -right-1 w-2 h-2 bg-orange-500 rounded-full"
-          title="Carrito temporal"
-        ></span>
       )}
     </div>
   );

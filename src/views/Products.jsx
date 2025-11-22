@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import ProductGrid from "../components/Product/ProductGrid";
 import ProductFilters from "../components/Product/ProductFilters";
 import { useCart } from "../hook/useCart";
 import { useProducts } from "../hook/useProducts";
 import { useCategories } from "../hook/useCategories";
+import useToast from "../hook/useToast";
+import Toast from "../components/UI/Toast";
 
 const Products = () => {
   const [searchParams] = useSearchParams();
@@ -15,7 +17,18 @@ const Products = () => {
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 12;
-  const { addToCart } = useCart();
+  const { toast, showToast, dismissToast } = useToast();
+  
+  const cartCallbacks = useMemo(() => ({
+    onAddSuccess: () => {
+      showToast("Product added to cart", "success");
+    },
+    onAddError: (error) => {
+      showToast(error || "Failed to add product to cart", "error");
+    },
+  }), [showToast]);
+  
+  const { addToCart } = useCart(cartCallbacks);
   const { products, isLoading: productsLoading } = useProducts();
   const { categories, isLoading: categoriesLoading } = useCategories();
 
@@ -136,6 +149,7 @@ const Products = () => {
           emptyMessage="No products found"
           emptySubMessage="Try adjusting your search or filter criteria"
           onAddToCart={handleAddToCart}
+          showToast={showToast}
         />
 
         {/* Pagination Controls */}
@@ -199,6 +213,7 @@ const Products = () => {
           </div>
         )}
       </section>
+      <Toast toast={toast} onClose={dismissToast} />
     </div>
   );
 };

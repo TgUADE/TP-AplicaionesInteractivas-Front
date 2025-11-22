@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ProductGrid from "../components/Product/ProductGrid";
 import CategoryNav from "../components/Category/CategoryNav";
@@ -10,6 +10,8 @@ import ProductBannerWideSquare from "../components/Home/ProductBanner-WideSquare
 import ProductBannerSquareLeft from "../components/Home/ProductBanner-SquareLeft";
 import ProductBannerSquareRight from "../components/Home/ProductBanner-SquareRight";
 import ProductBannerBigSquare from "../components/Home/ProductBanner-BigSquare";
+import useToast from "../hook/useToast";
+import Toast from "../components/UI/Toast";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -18,13 +20,25 @@ const Home = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 8;
   const productsSectionRef = useRef(null);
+  const { toast, showToast, dismissToast } = useToast();
   
   const handleBannerClick = (productId) => {
     navigate(`/product/${productId}`);
-  };  const { products, categories, isLoading, filterProductsByCategory } =
+  };
+  
+  const cartCallbacks = useMemo(() => ({
+    onAddSuccess: () => {
+      showToast("Product added to cart", "success");
+    },
+    onAddError: (error) => {
+      showToast(error || "Failed to add product to cart", "error");
+    },
+  }), [showToast]);
+  
+  const { products, categories, isLoading, filterProductsByCategory } =
     useProducts();
   const { promotionalProducts, isLoadingPromotions } = usePromotions();
-  const { addToCart } = useCart();
+  const { addToCart } = useCart(cartCallbacks);
   const filteredProducts = filterProductsByCategory(
     products,
     categories,
@@ -163,6 +177,7 @@ const Home = () => {
           products={currentProducts}
           isLoading={getLoadingState()}
           onAddToCart={(product) => { return addToCart(product, 1); }}
+          showToast={showToast}
         />
 
         {/* Pagination Controls */}
@@ -226,6 +241,7 @@ const Home = () => {
           </div>
         )}
       </section>
+      <Toast toast={toast} onClose={dismissToast} />
     </div>
   );
 };

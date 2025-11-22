@@ -13,9 +13,9 @@ const CartProducts = ( { cartProducts , handleProductClick, handleQuantityChange
                     onClick={(e) => handleProductClick(item.productId, e)}
                 >
                     <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
-                    {item.product?.images?.[0]?.imageUrl ? (
+                    {item.product?.images?.find(img => img.isPrimary)?.imageUrl || item.product?.images?.[0]?.imageUrl ? (
                         <img
-                        src={item.product.images[0].imageUrl}
+                        src={item.product.images.find(img => img.isPrimary)?.imageUrl || item.product.images[0].imageUrl}
                         alt={item.product.name}
                         className="w-full h-full object-cover rounded-lg"
                         />

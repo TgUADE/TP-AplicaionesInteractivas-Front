@@ -108,6 +108,7 @@ const Favorites = () => {
             }))}
             isLoading={false} 
             onAddToCart={handleAddToCart}
+            showToast={showToast}
           />
         )}
 

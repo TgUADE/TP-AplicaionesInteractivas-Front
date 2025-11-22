@@ -5,7 +5,7 @@ import { useFavoritesContext } from "../../context/FavoritesContext";
 import { useAuth } from "../../hook/useAuth";
 import { useCart } from "../../hook/useCart";
 
-const ProductCard = ({ product, onAddToCart }) => {
+const ProductCard = ({ product, onAddToCart, showToast }) => {
   const navigate = useNavigate();
   const { isLoggedIn, isAdmin } = useAuth();
   const {
@@ -15,7 +15,7 @@ const ProductCard = ({ product, onAddToCart }) => {
   } = useFavoritesContext();
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [buttonState, setButtonState] = useState('idle'); // idle | adding | added
+  const [buttonState, setButtonState] = useState('idle'); // idle | adding 
   
   // Para múltiples componentes, no usar callbacks de Redux
   const { addToCart: addToCartAction } = useCart();
@@ -85,7 +85,7 @@ const ProductCard = ({ product, onAddToCart }) => {
     e.stopPropagation();
 
     if (!isLoggedIn) {
-      showToast("Debes iniciar sesión para agregar favoritos", "error");
+      showToast?.("You must be logged in to add favorites", "error");
       setTimeout(() => {
         navigate("/auth");
       }, 1500);
@@ -94,25 +94,25 @@ const ProductCard = ({ product, onAddToCart }) => {
 
     // Verificar si es admin ANTES de hacer nada
     if (isAdmin) {
-      showToast("Admins cannot add favorites", "error");
+      showToast?.("Admins cannot add favorites", "error");
       return;
     }
 
     if (!product.id) {
-      showToast("Producto inválido", "error");
+      showToast?.("Producto inválido", "error");
       return;
     }
 
     try {
       await toggleFavorite(product.id);
       if (isFavorite(product.id)) {
-        showToast("Eliminado de favoritos", "success");
+        showToast?.("Removed from favorites", "success");
       } else {
-        showToast("Agregado a favoritos", "success");
+        showToast?.("Added to favorites", "success");
       }
     } catch (error) {
-      showToast(
-        error?.message || "Error al actualizar favoritos",
+      showToast?.(
+        error?.message || "Error updating favorites",
         "error"
       );
     }
@@ -121,8 +121,14 @@ const ProductCard = ({ product, onAddToCart }) => {
   const handleAddToCart = async (e) => {
     e.stopPropagation();
     
-    // Verificar si es admin o si ya está agregando
-    if (isAdmin || buttonState !== 'idle') {
+    // Verificar si es admin
+    if (isAdmin) {
+      showToast?.("Admins cannot add products to cart", "error");
+      return;
+    }
+    
+    // Verificar si ya está agregando
+    if (buttonState !== 'idle') {
       return;
     }
     
@@ -167,8 +173,6 @@ const ProductCard = ({ product, onAddToCart }) => {
     switch (buttonState) {
       case 'adding':
         return 'Adding...';
-      case 'added':
-        return 'Product added to cart';
       default:
         return 'Add to cart';
     }
@@ -312,10 +316,9 @@ const ProductCard = ({ product, onAddToCart }) => {
               <button
                 onClick={handleAddToCart}
                 disabled={buttonState !== 'idle'}
+                //no added state anymore
                 className={`border-none px-8 py-4 rounded-lg font-medium transition-all duration-300 text-base w-full ${
-                  buttonState === 'added'
-                    ? 'bg-green-600 text-white cursor-default'
-                    : buttonState === 'adding'
+                    buttonState === 'adding'
                     ? 'bg-gray-600 text-white cursor-not-allowed'
                     : 'bg-gray-900 text-white cursor-pointer hover:bg-gray-700'
                 }`}

@@ -356,8 +356,8 @@ const Cart = () => {
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Shopping Cart</h1>
           {isLocalCart && (
-            <div className="flex items-center gap-2 text-sm text-orange-600 bg-orange-50 px-3 py-2 rounded-lg">
-              <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+              <span className="w-2 h-2 bg-red-500 rounded-full"></span>
               Temporary cart -{" "}
               <a href="/auth" className="underline">
                 Log in

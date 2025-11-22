@@ -5,6 +5,7 @@ const ProductGrid = ({
   products = [], 
   isLoading = false, 
   onAddToCart,
+  showToast,
   emptyMessage = "No products found",
   emptySubMessage = "Try adjusting your search or filter criteria"
 }) => {
@@ -41,6 +42,7 @@ const ProductGrid = ({
             key={product.id} 
             product={product} 
             onAddToCart={onAddToCart}
+            showToast={showToast}
           />
         ))}
       </div>

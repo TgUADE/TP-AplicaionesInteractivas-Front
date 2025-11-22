@@ -41,15 +41,13 @@ const Profile = () => {
     },
     onDeleteSuccess: () => {
       setShowDeleteModal(false);
+      setIsDeletingAccount(false);
       setIsLoggingOut(true);
       showToast("Account deleted successfully", "success");
-      console.log("✅ Account deleted successfully");
+      console.log("✅ Account deleted successfully - redirecting to home");
       
-      setTimeout(() => {
-        dispatch(clearUserProfile());
-        logout();
-        navigate("/home");
-      }, 1500);
+      // Limpiar perfil inmediatamente
+      dispatch(clearUserProfile());
     },
     onDeleteError: (error) => {
       console.error("❌ Error deleting account:", error);
@@ -57,7 +55,7 @@ const Profile = () => {
       setIsLoggingOut(false);
       showToast("Error deleting account. Please try again.", "error");
     },
-  }), [showToast, dispatch, navigate]);
+  }), [showToast, dispatch]);
   
   const { isLoggedIn, logout, isInitialized } = useAuth(authCallbacks);
   const { profile, isLoading, error, isInitialized: profileInitialized, updateProfile, deleteAccount } = useUserProfile(profileCallbacks);
@@ -74,9 +72,19 @@ const Profile = () => {
     }
   }, [isLoggedIn, isInitialized, navigate, isLoggingOut]);
 
+  // Manejar logout después de eliminar cuenta
+  useEffect(() => {
+    if (isLoggingOut && !profile) {
+      
+        logout();
+        navigate("/home");
+      
+    }
+  }, [isLoggingOut, profile, logout, navigate]);
+
   const handleLogout = () => {
     setIsLoggingOut(true);
-    // El toast se mostrará automáticamente por el callback onLogoutSuccess
+    showToast("Logged out successfully", "success");
     setTimeout(() => {
       dispatch(clearUserProfile());
       logout();

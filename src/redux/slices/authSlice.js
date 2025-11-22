@@ -39,7 +39,7 @@ export const authSlice = createSlice({
   initialState: {
     token: null,
     isLoggedIn: false,
-    loading: false,
+    isLoading: false,
     error: null,
     isInitialized: false,
   },
@@ -74,34 +74,34 @@ export const authSlice = createSlice({
     builder
       // Login User
       .addCase(loginUser.pending, (state) => {
-        state.loading = true;
+        state.isLoading = true;
         state.error = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
-        state.loading = false;
+        state.isLoading = false;
         state.token = action.payload.token;
         state.isLoggedIn = true;
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
-        state.loading = false;
+        state.isLoading = false;
         state.error = action.error.message;
         state.token = null;
         state.isLoggedIn = false;
       })
       // Register User
       .addCase(registerUser.pending, (state) => {
-        state.loading = true;
+        state.isLoading = true;
         state.error = null;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
-        state.loading = false;
+        state.isLoading = false;
         state.token = action.payload.token;
         state.isLoggedIn = true;
         state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {
-        state.loading = false;
+        state.isLoading = false;
         state.error = action.error.message;
         state.token = null;
         state.isLoggedIn = false;
