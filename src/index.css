@@ -26,3 +26,28 @@ body {
   flex-direction: column;
   background-color: #ffffff;
 }
+
+
+
+typebot-bubble button {
+  background-color: transparent !important;
+  border-radius: 50% !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important; /* Sombra suave opcional */
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+
+typebot-bubble button img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+}
+
+
+typebot-bubble button:hover {
+  background-color: transparent !important;
+  transform: scale(1.05); /* Efecto hover suave */
+  transition: transform 0.2s ease;
+}

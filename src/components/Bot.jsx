@@ -13,21 +13,24 @@ const Bot = () => {
         apiHost: "https://typebot.io",
         theme: {
           button: {
-            backgroundColor: "#1D1D1D",
-            customIconSrc: "https://s3.typebot.io/public/workspaces/cmiam1zxo0007i6044k9eue7r/typebots/cmiam9usm0006jy041l5giher/bubble-icon?v=1763836189162",
+            backgroundColor: "transparent",  // ← Sin fondo negro
+            customIconSrc: "https://s3.typebot.io/public/workspaces/cmiam1zxo0007i6044k9eue7r/typebots/cmiam9usm0006jy041l5giher/bubble-icon?v=1763856839024",
+            size: "medium",
           },
+          placement: "right",
         },
       });
     `;
     document.body.appendChild(script);
 
     return () => {
-      // Limpiar al desmontar
-      document.body.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
   }, []);
 
-  return null; // No renderiza nada, el bubble se inyecta en el body
+  return null;
 };
 
 export default Bot;
